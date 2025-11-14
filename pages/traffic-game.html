@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🚦 Traffic Light Simulator | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; overflow:hidden; }
+        .game { display:flex; flex-direction:column; height:100vh; padding:10px; }
+        .header { background:#111; border:2px solid #0f0; padding:15px; margin-bottom:10px; }
+        .stats { display:flex; gap:20px; margin-top:10px; font-size:18px; }
+        .content { display:flex; gap:10px; flex:1; }
+        .viewport { flex:1; background:#050505; border:2px solid #0f0; position:relative; }
+        .panel { width:300px; background:#111; border:2px solid #0f0; padding:10px; overflow-y:auto; }
+
+        .intersection { position:absolute; top:50%; left:50%; transform:translate(-50%, -50%); width:300px; height:300px; }
+        .road { position:absolute; background:#333; }
+        .road.vertical { width:100px; height:300px; left:100px; top:0; }
+        .road.horizontal { width:300px; height:100px; left:0; top:100px; }
+
+        .traffic-light { position:absolute; width:40px; }
+        .light { width:30px; height:30px; border-radius:50%; margin:5px; background:#222; border:2px solid #666; }
+        .light.red.on { background:#f00; box-shadow:0 0 20px #f00; }
+        .light.yellow.on { background:#ff0; box-shadow:0 0 20px #ff0; }
+        .light.green.on { background:#0f0; box-shadow:0 0 20px #0f0; }
+
+        .north-light { top:-50px; left:130px; }
+        .south-light { bottom:-50px; left:130px; }
+        .east-light { right:-50px; top:130px; }
+        .west-light { left:-50px; top:130px; }
+
+        .car { position:absolute; width:30px; height:50px; background:#00f; border-radius:5px; transition:all 0.3s; }
+        .car.horizontal { width:50px; height:30px; }
+
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:8px 15px; margin:3px; cursor:pointer; font-family:monospace; font-size:11px; }
+        button:hover { background:#005500; }
+        .score { font-size:24px; font-weight:bold; }
+        .state-display { background:#000; padding:10px; margin:10px 0; border:1px solid #0f0; font-size:11px; }
+    </style>
+</head>
+<body>
+    <div class="game">
+        <div class="header">
+            <h1>🚦 TRAFFIC LIGHT CONTROL CHALLENGE</h1>
+            <div class="stats">
+                <span>⏱️ <span id="timer">180</span>s</span>
+                <span>🚗 Cars: <span id="cars" class="score">0</span></span>
+                <span>💥 Accidents: <span id="accidents" class="score">0</span></span>
+                <span>📊 Score: <span id="score" class="score">0</span></span>
+            </div>
+        </div>
+        <div class="content">
+            <div class="viewport" id="viewport">
+                <div class="intersection">
+                    <div class="road vertical"></div>
+                    <div class="road horizontal"></div>
+
+                    <!-- Traffic Lights -->
+                    <div class="traffic-light north-light" id="light-north">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    <div class="traffic-light south-light" id="light-south">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    <div class="traffic-light east-light" id="light-east">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                    <div class="traffic-light west-light" id="light-west">
+                        <div class="light red"></div>
+                        <div class="light yellow"></div>
+                        <div class="light green"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="panel">
+                <h3>⚡ PLC State Machine</h3>
+                <div class="state-display" id="state-display">
+State: IDLE<br>
+North/South: RED<br>
+East/West: RED<br>
+Timer: 0
+                </div>
+
+                <h3>🎮 Manual Override</h3>
+                <div>
+                    <strong>North/South:</strong><br>
+                    <button onclick="game.setLight('NS', 'red')">RED</button>
+                    <button onclick="game.setLight('NS', 'yellow')">YELLOW</button>
+                    <button onclick="game.setLight('NS', 'green')">GREEN</button>
+                </div>
+                <div style="margin-top:10px;">
+                    <strong>East/West:</strong><br>
+                    <button onclick="game.setLight('EW', 'red')">RED</button>
+                    <button onclick="game.setLight('EW', 'yellow')">YELLOW</button>
+                    <button onclick="game.setLight('EW', 'green')">GREEN</button>
+                </div>
+
+                <h3 style="margin-top:15px;">🤖 Auto Mode</h3>
+                <button onclick="game.startAuto()" style="width:100%;">Start Auto Sequence</button>
+                <button onclick="game.stopAuto()" style="width:100%; margin-top:5px;">Stop Auto</button>
+
+                <h3 style="margin-top:15px;">📊 Timing Settings</h3>
+                <div style="font-size:11px;">
+                    Green: <input type="number" id="green-time" value="15" style="width:50px;"> sec<br>
+                    Yellow: <input type="number" id="yellow-time" value="3" style="width:50px;"> sec<br>
+                    Red: <input type="number" id="red-time" value="5" style="width:50px;"> sec
+                </div>
+
+                <h3 style="margin-top:15px;">ℹ️ Objective</h3>
+                <p style="font-size:11px; line-height:1.6;">
+                    Control the intersection for 3 minutes without accidents!
+                    <br><br>
+                    <strong>Rules:</strong><br>
+                    - Never have N/S and E/W green simultaneously<br>
+                    - Use yellow for safe transitions<br>
+                    - Minimize wait times<br>
+                    - Score = Cars × 10 - Accidents × 100
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+
+        class TrafficGame {
+            constructor() {
+                this.plc = new PLC('AB', 1);
+                this.plc.init();
+
+                this.time = 180;
+                this.cars = 0;
+                this.accidents = 0;
+                this.score = 0;
+
+                this.lights = { NS: 'red', EW: 'red' };
+                this.state = 'IDLE';
+                this.stateTimer = 0;
+                this.autoMode = false;
+
+                this.carList = [];
+
+                this.setupPLC();
+                this.start();
+            }
+
+            setupPLC() {
+                this.plc.setState('EXECUTE');
+            }
+
+            setLight(direction, color) {
+                this.lights[direction] = color;
+                this.updateLightDisplay();
+                this.checkCollision();
+            }
+
+            updateLightDisplay() {
+                const directions = {
+                    NS: ['north', 'south'],
+                    EW: ['east', 'west']
+                };
+
+                Object.entries(this.lights).forEach(([dir, color]) => {
+                    directions[dir].forEach(cardinalDir => {
+                        const lightEl = document.getElementById(`light-${cardinalDir}`);
+                        lightEl.querySelectorAll('.light').forEach(l => l.classList.remove('on'));
+                        lightEl.querySelector(`.light.${color}`).classList.add('on');
+                    });
+                });
+
+                // Update state display
+                document.getElementById('state-display').innerHTML = `
+State: ${this.state}<br>
+North/South: ${this.lights.NS.toUpperCase()}<br>
+East/West: ${this.lights.EW.toUpperCase()}<br>
+Timer: ${this.stateTimer.toFixed(1)}s
+                `;
+            }
+
+            startAuto() {
+                this.autoMode = true;
+                this.state = 'NS_GREEN';
+                this.stateTimer = 0;
+            }
+
+            stopAuto() {
+                this.autoMode = false;
+                this.state = 'IDLE';
+            }
+
+            updateAutoSequence(dt) {
+                if (!this.autoMode) return;
+
+                this.stateTimer += dt;
+                const greenTime = parseFloat(document.getElementById('green-time').value);
+                const yellowTime = parseFloat(document.getElementById('yellow-time').value);
+
+                switch(this.state) {
+                    case 'NS_GREEN':
+                        this.setLight('NS', 'green');
+                        this.setLight('EW', 'red');
+                        if (this.stateTimer > greenTime) {
+                            this.state = 'NS_YELLOW';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                    case 'NS_YELLOW':
+                        this.setLight('NS', 'yellow');
+                        if (this.stateTimer > yellowTime) {
+                            this.state = 'ALL_RED_1';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                    case 'ALL_RED_1':
+                        this.setLight('NS', 'red');
+                        this.setLight('EW', 'red');
+                        if (this.stateTimer > 2) {
+                            this.state = 'EW_GREEN';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                    case 'EW_GREEN':
+                        this.setLight('EW', 'green');
+                        this.setLight('NS', 'red');
+                        if (this.stateTimer > greenTime) {
+                            this.state = 'EW_YELLOW';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                    case 'EW_YELLOW':
+                        this.setLight('EW', 'yellow');
+                        if (this.stateTimer > yellowTime) {
+                            this.state = 'ALL_RED_2';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                    case 'ALL_RED_2':
+                        this.setLight('NS', 'red');
+                        this.setLight('EW', 'red');
+                        if (this.stateTimer > 2) {
+                            this.state = 'NS_GREEN';
+                            this.stateTimer = 0;
+                        }
+                        break;
+                }
+            }
+
+            spawnCar() {
+                const directions = ['north', 'south', 'east', 'west'];
+                const dir = directions[Math.floor(Math.random() * directions.length)];
+
+                const car = document.createElement('div');
+                car.className = 'car';
+
+                const viewport = document.getElementById('viewport');
+                const rect = viewport.getBoundingClientRect();
+
+                if (dir === 'north') {
+                    car.style.left = (rect.width / 2 - 15) + 'px';
+                    car.style.top = '0px';
+                    car.dataset.dir = 'north';
+                    car.dataset.speed = '100';
+                } else if (dir === 'south') {
+                    car.style.left = (rect.width / 2 + 35) + 'px';
+                    car.style.top = rect.height + 'px';
+                    car.dataset.dir = 'south';
+                    car.dataset.speed = '-100';
+                } else if (dir === 'east') {
+                    car.className = 'car horizontal';
+                    car.style.left = '0px';
+                    car.style.top = (rect.height / 2 - 15) + 'px';
+                    car.dataset.dir = 'east';
+                    car.dataset.speed = '100';
+                } else {
+                    car.className = 'car horizontal';
+                    car.style.left = rect.width + 'px';
+                    car.style.top = (rect.height / 2 + 35) + 'px';
+                    car.dataset.dir = 'west';
+                    car.dataset.speed = '-100';
+                }
+
+                viewport.appendChild(car);
+                this.carList.push(car);
+                this.cars++;
+                document.getElementById('cars').textContent = this.cars;
+            }
+
+            updateCars(dt) {
+                const viewport = document.getElementById('viewport');
+                const rect = viewport.getBoundingClientRect();
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+
+                this.carList.forEach((car, idx) => {
+                    const dir = car.dataset.dir;
+                    const speed = parseFloat(car.dataset.speed);
+
+                    // Check if should stop at light
+                    let shouldStop = false;
+                    const currentPos = dir === 'north' || dir === 'south'
+                        ? parseFloat(car.style.top)
+                        : parseFloat(car.style.left);
+
+                    if (dir === 'north' && this.lights.NS !== 'green' && currentPos > centerY - 100 && currentPos < centerY) shouldStop = true;
+                    if (dir === 'south' && this.lights.NS !== 'green' && currentPos < centerY + 100 && currentPos > centerY) shouldStop = true;
+                    if (dir === 'east' && this.lights.EW !== 'green' && currentPos > centerX - 100 && currentPos < centerX) shouldStop = true;
+                    if (dir === 'west' && this.lights.EW !== 'green' && currentPos < centerX + 100 && currentPos > centerX) shouldStop = true;
+
+                    if (!shouldStop) {
+                        if (dir === 'north' || dir === 'south') {
+                            car.style.top = (parseFloat(car.style.top) + speed * dt) + 'px';
+                        } else {
+                            car.style.left = (parseFloat(car.style.left) + speed * dt) + 'px';
+                        }
+                    }
+
+                    // Remove if off screen
+                    const top = parseFloat(car.style.top);
+                    const left = parseFloat(car.style.left);
+                    if (top < -100 || top > rect.height + 100 || left < -100 || left > rect.width + 100) {
+                        car.remove();
+                        this.carList.splice(idx, 1);
+                        this.score += 10;
+                    }
+                });
+            }
+
+            checkCollision() {
+                // Simple collision check - if both lights green, it's an accident
+                if (this.lights.NS === 'green' && this.lights.EW === 'green') {
+                    this.accidents++;
+                    this.score -= 100;
+                    document.getElementById('accidents').textContent = this.accidents;
+
+                    // Visual feedback
+                    const viewport = document.getElementById('viewport');
+                    viewport.style.background = '#500';
+                    setTimeout(() => viewport.style.background = '#050505', 200);
+                }
+            }
+
+            start() {
+                let lastTime = Date.now();
+                const gameLoop = () => {
+                    if (this.time <= 0) {
+                        alert(`Game Over!\nScore: ${this.score}\nCars: ${this.cars}\nAccidents: ${this.accidents}`);
+                        return;
+                    }
+
+                    const now = Date.now();
+                    const dt = (now - lastTime) / 1000;
+                    lastTime = now;
+
+                    this.time -= dt;
+                    document.getElementById('timer').textContent = Math.ceil(this.time);
+                    document.getElementById('score').textContent = this.score;
+
+                    this.updateAutoSequence(dt);
+                    this.updateCars(dt);
+
+                    // Spawn cars
+                    if (Math.random() < 0.02) {
+                        this.spawnCar();
+                    }
+
+                    requestAnimationFrame(gameLoop);
+                };
+
+                gameLoop();
+            }
+        }
+
+        window.game = new TrafficGame();
+    </script>
+</body>
+</html>

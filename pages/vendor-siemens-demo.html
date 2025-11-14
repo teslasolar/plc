@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Siemens S7-1500 Demo | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background: linear-gradient(135deg, #00999922, #000); color:#0f0; }
+        .demo { padding:20px; }
+        .header { background:#111; border:3px solid #009999; padding:20px; margin-bottom:20px; }
+        .content { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
+        .panel { background:#111; border:2px solid #009999; padding:15px; }
+        .status-row { display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333; }
+        .io-grid { display:grid; grid-template-columns: repeat(8, 1fr); gap:5px; margin:10px 0; }
+        .io-bit { background:#000; padding:8px; text-align:center; border:1px solid #333; cursor:pointer; }
+        .io-bit.on { background:#009999; color:#fff; font-weight:bold; }
+        button { background:#003366; color:#009999; border:2px solid #009999; padding:10px 20px; margin:5px; cursor:pointer; font-family:monospace; font-size:14px; }
+        button:hover { background:#009999; color:#fff; }
+        pre { background:#000; padding:10px; border-left:3px solid #009999; overflow-x:auto; font-size:12px; }
+        .db-table { width:100%; margin:10px 0; border-collapse:collapse; }
+        .db-table td { padding:5px; border:1px solid #333; }
+    </style>
+</head>
+<body>
+    <div class="demo">
+        <div class="header">
+            <h1 style="color:#009999;">🟦 Siemens S7-1500</h1>
+            <p>CPU 1515-2 PN | TIA Portal Compatible | 20ms Scan Rate</p>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>📊 PLC Status</h2>
+                <div id="status">
+                    <div class="status-row"><span>State:</span><span id="state">STOPPED</span></div>
+                    <div class="status-row"><span>Scan Count:</span><span id="scan">0</span></div>
+                    <div class="status-row"><span>Scan Rate:</span><span>20ms</span></div>
+                    <div class="status-row"><span>CPU Load:</span><span id="load">0%</span></div>
+                </div>
+
+                <h3 style="margin-top:20px;">🔌 Digital Inputs (I)</h3>
+                <div class="io-grid" id="di-grid"></div>
+
+                <h3>💡 Digital Outputs (Q)</h3>
+                <div class="io-grid" id="do-grid"></div>
+
+                <h3 style="margin-top:20px;">📦 Data Block DB1</h3>
+                <table class="db-table">
+                    <tr><td>DB1.DBX0.0</td><td id="db0">0</td></tr>
+                    <tr><td>DB1.DBW2</td><td id="db2">0</td></tr>
+                    <tr><td>DB1.DBD4</td><td id="db4">0</td></tr>
+                </table>
+
+                <h3 style="margin-top:20px;">⚡ STL Program</h3>
+                <pre>
+NETWORK 1: Start Logic
+  A     I0.0      // Start button
+  A     M0.0      // Run enable
+  =     Q0.0      // Motor output
+
+NETWORK 2: Stop Logic
+  A     I0.1      // Stop button
+  =     M0.1      // Stop flag
+  AN    M0.1
+  =     M0.0      // Reset run enable
+
+NETWORK 3: Data Transfer
+  L     IW2       // Load analog input
+  T     DB1.DBW2  // Transfer to DB
+                </pre>
+            </div>
+
+            <div class="panel">
+                <h2>🎮 Controls</h2>
+                <h3>State Control</h3>
+                <button onclick="demo.setState('STOPPED')">STOP</button>
+                <button onclick="demo.setState('IDLE')">IDLE</button>
+                <button onclick="demo.setState('EXECUTE')">RUN</button>
+
+                <h3 style="margin-top:20px;">🔧 Specifications</h3>
+                <div style="font-size:12px; line-height:1.8;">
+                    <div><strong>CPU:</strong> 1515-2 PN</div>
+                    <div><strong>Memory:</strong> 500 KB Work</div>
+                    <div><strong>I/O:</strong> 32K points</div>
+                    <div><strong>Network:</strong> Profinet</div>
+                    <div><strong>Protocols:</strong> S7, Modbus</div>
+                    <div><strong>Programming:</strong> TIA Portal v17</div>
+                </div>
+
+                <h3 style="margin-top:20px;">📚 Quick Start</h3>
+                <pre style="font-size:10px;">
+const plc = new PLC('Siemens', 1);
+plc.init();
+plc.addRung(
+  'this.tags["I0.0"] && this.tags["M0.0"]',
+  function() {
+    this.tags["Q0.0"] = true;
+  }
+);
+plc.setState('EXECUTE');
+                </pre>
+
+                <h3 style="margin-top:20px;">📖 STL Instructions</h3>
+                <div style="font-size:11px; line-height:1.6;">
+                    <div><strong>A</strong> - AND logic</div>
+                    <div><strong>O</strong> - OR logic</div>
+                    <div><strong>AN</strong> - AND NOT</div>
+                    <div><strong>L</strong> - Load</div>
+                    <div><strong>T</strong> - Transfer</div>
+                    <div><strong>=</strong> - Assignment</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+
+        class SiemensDemo {
+            constructor() {
+                this.plc = new PLC('Siemens', 1);
+                this.plc.init();
+                this.setupPLC();
+                this.render();
+                setInterval(() => this.update(), 100);
+            }
+
+            setupPLC() {
+                // STL: A I0.0, A M0.0, = Q0.0
+                this.plc.addRung('this.tags["I0.0"] && this.tags["M0.0"]', function() {
+                    this.tags["Q0.0"] = true;
+                    this.io.DO[0] = true;
+                });
+
+                // STL: A I0.1, = M0.1
+                this.plc.addRung('this.tags["I0.1"]', function() {
+                    this.tags["M0.1"] = true;
+                    this.tags["M0.0"] = false;
+                });
+
+                // Initialize tags
+                this.plc.tags["I0.0"] = false;
+                this.plc.tags["I0.1"] = false;
+                this.plc.tags["M0.0"] = true;
+                this.plc.tags["M0.1"] = false;
+                this.plc.tags["Q0.0"] = false;
+            }
+
+            render() {
+                const diGrid = document.getElementById('di-grid');
+                const doGrid = document.getElementById('do-grid');
+
+                for (let i = 0; i < 8; i++) {
+                    const diBit = document.createElement('div');
+                    diBit.className = 'io-bit';
+                    diBit.textContent = `I0.${i}`;
+                    diBit.onclick = () => this.toggleInput(i);
+                    diGrid.appendChild(diBit);
+
+                    const doBit = document.createElement('div');
+                    doBit.className = 'io-bit';
+                    doBit.textContent = `Q0.${i}`;
+                    doGrid.appendChild(doBit);
+                }
+            }
+
+            toggleInput(i) {
+                this.plc.io.DI[i] = !this.plc.io.DI[i];
+                this.plc.tags[`I0.${i}`] = this.plc.io.DI[i];
+            }
+
+            setState(state) {
+                this.plc.setState(state);
+            }
+
+            update() {
+                this.plc.scan();
+
+                document.getElementById('state').textContent = this.plc.state;
+                document.getElementById('scan').textContent = this.plc.scanCount;
+                document.getElementById('load').textContent = Math.floor(Math.random() * 15 + 5) + '%';
+
+                // Update I/O display
+                document.querySelectorAll('#di-grid .io-bit').forEach((el, i) => {
+                    el.classList.toggle('on', this.plc.io.DI[i]);
+                });
+
+                document.querySelectorAll('#do-grid .io-bit').forEach((el, i) => {
+                    el.classList.toggle('on', this.plc.io.DO[i]);
+                });
+
+                // Update data blocks
+                document.getElementById('db0').textContent = this.plc.io.DI[0] ? '1' : '0';
+                document.getElementById('db2').textContent = this.plc.io.AI[0].toFixed(2);
+                document.getElementById('db4').textContent = (this.plc.scanCount * 20).toString();
+            }
+        }
+
+        window.demo = new SiemensDemo();
+    </script>
+</body>
+</html>

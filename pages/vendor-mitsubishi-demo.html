@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mitsubishi FX5U Demo | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background: linear-gradient(135deg, #cc000022, #000); color:#0f0; }
+        .demo { padding:20px; }
+        .header { background:#111; border:3px solid #cc0000; padding:20px; margin-bottom:20px; }
+        .content { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
+        .panel { background:#111; border:2px solid #cc0000; padding:15px; }
+        .status-row { display:flex; justify-content:space-between; padding:5px; border-bottom:1px solid #333; }
+        .io-grid { display:grid; grid-template-columns: repeat(8, 1fr); gap:5px; margin:10px 0; }
+        .io-bit { background:#000; padding:8px; text-align:center; border:1px solid #333; cursor:pointer; }
+        .io-bit.on { background:#cc0000; color:#fff; font-weight:bold; }
+        button { background:#330000; color:#cc0000; border:2px solid #cc0000; padding:10px 20px; margin:5px; cursor:pointer; font-family:monospace; font-size:14px; }
+        button:hover { background:#cc0000; color:#fff; }
+        pre { background:#000; padding:10px; border-left:3px solid #cc0000; overflow-x:auto; font-size:12px; }
+        .ladder { font-family: monospace; background:#000; padding:10px; line-height:1.8; }
+    </style>
+</head>
+<body>
+    <div class="demo">
+        <div class="header">
+            <h1 style="color:#cc0000;">🔴 Mitsubishi FX5U</h1>
+            <p>FX5U-64MR/ES | GX Works 3 Compatible | 10ms Scan Rate</p>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>📊 PLC Status</h2>
+                <div id="status">
+                    <div class="status-row"><span>State:</span><span id="state">STOPPED</span></div>
+                    <div class="status-row"><span>Scan Count:</span><span id="scan">0</span></div>
+                    <div class="status-row"><span>Scan Rate:</span><span>10ms</span></div>
+                    <div class="status-row"><span>Program Steps:</span><span id="steps">24</span></div>
+                </div>
+
+                <h3 style="margin-top:20px;">🔌 Inputs (X)</h3>
+                <div class="io-grid" id="di-grid"></div>
+
+                <h3>💡 Outputs (Y)</h3>
+                <div class="io-grid" id="do-grid"></div>
+
+                <h3 style="margin-top:20px;">🧮 Internal Relays (M) & Data (D)</h3>
+                <div style="font-size:12px; margin:10px 0;">
+                    <div style="display:flex; justify-content:space-between; padding:3px;">
+                        <span>M0 (Run Enable):</span><span id="m0">OFF</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:3px;">
+                        <span>M1 (Alarm Flag):</span><span id="m1">OFF</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:3px;">
+                        <span>D0 (Counter):</span><span id="d0">0</span>
+                    </div>
+                    <div style="display:flex; justify-content:space-between; padding:3px;">
+                        <span>D100 (Setpoint):</span><span id="d100">100</span>
+                    </div>
+                </div>
+
+                <h3 style="margin-top:20px;">⚡ Ladder Program</h3>
+                <div class="ladder">
+|                                                    |<br>
+| X000      M0                           Y000      |<br>
+|--] [------] [--------------------------( )-------|<br>
+|                                                   |<br>
+| X001                                   M0        |<br>
+|--] [--------------------------------------(/)----|<br>
+|                                                   |<br>
+| X002                  [CTU  C0   K100]           |<br>
+|--] [-------------------[CTU C0    ]--------------|<br>
+|                        [     K100 ]              |<br>
+|                                                   |<br>
+| C0                                     Y001      |<br>
+|--] [---------------------------------------( )----|<br>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>🎮 Controls</h2>
+                <h3>State Control</h3>
+                <button onclick="demo.setState('STOPPED')">STOP</button>
+                <button onclick="demo.setState('IDLE')">IDLE</button>
+                <button onclick="demo.setState('EXECUTE')">RUN</button>
+
+                <h3 style="margin-top:20px;">🔧 Specifications</h3>
+                <div style="font-size:12px; line-height:1.8;">
+                    <div><strong>Model:</strong> FX5U-64MR/ES</div>
+                    <div><strong>Memory:</strong> 64K steps</div>
+                    <div><strong>I/O:</strong> 10,240 points</div>
+                    <div><strong>Network:</strong> CC-Link, Ethernet</div>
+                    <div><strong>High-Speed:</strong> 200 kHz counter</div>
+                    <div><strong>Programming:</strong> GX Works 3</div>
+                </div>
+
+                <h3 style="margin-top:20px;">📚 Quick Start</h3>
+                <pre style="font-size:10px;">
+const plc = new PLC('Mitsu', 1);
+plc.init();
+plc.addRung(
+  'this.tags["X0"] && this.tags["M0"]',
+  function() {
+    this.tags["Y0"] = true;
+  }
+);
+plc.setState('EXECUTE');
+                </pre>
+
+                <h3 style="margin-top:20px;">📖 Instructions</h3>
+                <div style="font-size:11px; line-height:1.6;">
+                    <div><strong>LD</strong> - Load contact</div>
+                    <div><strong>OUT</strong> - Output coil</div>
+                    <div><strong>AND</strong> - Series connection</div>
+                    <div><strong>OR</strong> - Parallel connection</div>
+                    <div><strong>CTU</strong> - Count up</div>
+                    <div><strong>MOV</strong> - Move data</div>
+                    <div><strong>ADD</strong> - Addition</div>
+                </div>
+
+                <h3 style="margin-top:20px;">⚡ Features</h3>
+                <div style="font-size:11px; line-height:1.6;">
+                    <div>✓ High-speed counters (200kHz)</div>
+                    <div>✓ Positioning control</div>
+                    <div>✓ Built-in analog I/O</div>
+                    <div>✓ SD card logging</div>
+                    <div>✓ CC-Link IE networking</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+
+        class MitsubishiDemo {
+            constructor() {
+                this.plc = new PLC('Mitsu', 1);
+                this.plc.init();
+                this.counter = 0;
+                this.setupPLC();
+                this.render();
+                setInterval(() => this.update(), 100);
+            }
+
+            setupPLC() {
+                // LD X0, AND M0, OUT Y0
+                this.plc.addRung('this.tags["X0"] && this.tags["M0"]', function() {
+                    this.tags["Y0"] = true;
+                    this.io.DO[0] = true;
+                });
+
+                // LD X1, OUT M0 (inverse - stop button)
+                this.plc.addRung('this.tags["X1"]', function() {
+                    this.tags["M0"] = false;
+                });
+
+                // Counter logic
+                this.plc.addRung('this.tags["X2"]', function() {
+                    if (!this.tags["_X2_OLD"]) {
+                        this.tags["D0"] = (this.tags["D0"] || 0) + 1;
+                        if (this.tags["D0"] >= 100) {
+                            this.tags["Y1"] = true;
+                            this.io.DO[1] = true;
+                        }
+                    }
+                    this.tags["_X2_OLD"] = true;
+                });
+
+                this.plc.addRung('!this.tags["X2"]', function() {
+                    this.tags["_X2_OLD"] = false;
+                });
+
+                // Initialize tags
+                this.plc.tags["X0"] = false;
+                this.plc.tags["X1"] = false;
+                this.plc.tags["X2"] = false;
+                this.plc.tags["M0"] = true;
+                this.plc.tags["M1"] = false;
+                this.plc.tags["Y0"] = false;
+                this.plc.tags["Y1"] = false;
+                this.plc.tags["D0"] = 0;
+                this.plc.tags["D100"] = 100;
+            }
+
+            render() {
+                const diGrid = document.getElementById('di-grid');
+                const doGrid = document.getElementById('do-grid');
+
+                for (let i = 0; i < 8; i++) {
+                    const diBit = document.createElement('div');
+                    diBit.className = 'io-bit';
+                    diBit.textContent = `X${i}`;
+                    diBit.onclick = () => this.toggleInput(i);
+                    diGrid.appendChild(diBit);
+
+                    const doBit = document.createElement('div');
+                    doBit.className = 'io-bit';
+                    doBit.textContent = `Y${i}`;
+                    doGrid.appendChild(doBit);
+                }
+            }
+
+            toggleInput(i) {
+                this.plc.io.DI[i] = !this.plc.io.DI[i];
+                this.plc.tags[`X${i}`] = this.plc.io.DI[i];
+            }
+
+            setState(state) {
+                this.plc.setState(state);
+            }
+
+            update() {
+                this.plc.scan();
+
+                document.getElementById('state').textContent = this.plc.state;
+                document.getElementById('scan').textContent = this.plc.scanCount;
+
+                // Update I/O display
+                document.querySelectorAll('#di-grid .io-bit').forEach((el, i) => {
+                    el.classList.toggle('on', this.plc.io.DI[i]);
+                });
+
+                document.querySelectorAll('#do-grid .io-bit').forEach((el, i) => {
+                    el.classList.toggle('on', this.plc.io.DO[i]);
+                });
+
+                // Update memory and data
+                document.getElementById('m0').textContent = this.plc.tags["M0"] ? 'ON' : 'OFF';
+                document.getElementById('m1').textContent = this.plc.tags["M1"] ? 'ON' : 'OFF';
+                document.getElementById('d0').textContent = this.plc.tags["D0"] || 0;
+                document.getElementById('d100').textContent = this.plc.tags["D100"] || 100;
+            }
+        }
+
+        window.demo = new MitsubishiDemo();
+    </script>
+</body>
+</html>
