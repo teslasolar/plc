@@ -185,7 +185,7 @@
         // ========================
         class PlcSimApp {
             constructor() {
-                this.renderer = new Render3D();
+                this.renderer = new Render3D(THREE, OrbitControls);
                 this.hmi = new HMI('hmi');
                 this.comms = new Comms('modbus');
                 this.plcs = [];

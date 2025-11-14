@@ -21,6 +21,8 @@ export class Render3D {
         this.plcMeshes = [];
         this.clock = new THREE.Clock();
         this.fps = 60;
+        this.fpsTime = 0;
+        this.frames = 0;
 
         this.addLights();
         this.addGrid();
@@ -73,6 +75,20 @@ export class Render3D {
 
     animate() {
         requestAnimationFrame(() => this.animate());
+
+        // Calculate FPS
+        const delta = this.clock.getDelta();
+        this.fpsTime = (this.fpsTime || 0) + delta;
+        this.frames = (this.frames || 0) + 1;
+
+        if (this.fpsTime >= 1.0) {
+            this.fps = this.frames;
+            this.frames = 0;
+            this.fpsTime = 0;
+            const fpsEl = document.getElementById('fps');
+            if (fpsEl) fpsEl.textContent = this.fps;
+        }
+
         this.updatePLCs();
         this.controls.update();
         this.renderer.render(this.scene, this.camera);
