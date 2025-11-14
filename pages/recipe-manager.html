@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Recipe Manager | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; }
+        .app { padding:20px; }
+        .header { background:#111; border:2px solid #0f0; padding:20px; margin-bottom:20px; }
+        .content { display:grid; grid-template-columns: 1fr 2fr; gap:20px; }
+        .panel { background:#111; border:2px solid #0f0; padding:15px; }
+        .recipe-list { margin:10px 0; }
+        .recipe-item { background:#000; padding:10px; margin:5px 0; border-left:3px solid #0f0; cursor:pointer; }
+        .recipe-item:hover { background:#111; }
+        .recipe-item.active { background:#003300; border-color:#0ff; }
+        .param-grid { display:grid; grid-template-columns: 1fr 1fr auto; gap:8px; margin:10px 0; align-items:center; }
+        .param-row { display:contents; }
+        .param-name { background:#000; padding:8px; border:1px solid #0f0; }
+        .param-value { background:#000; color:#0f0; border:1px solid #0f0; padding:8px; font-family:monospace; width:100%; }
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:8px 16px; margin:5px; cursor:pointer; font-family:monospace; font-size:12px; }
+        button:hover { background:#005500; }
+        button.danger { background:#330000; color:#f00; border-color:#f00; }
+        button.danger:hover { background:#550000; }
+        button.primary { background:#003366; color:#0ff; border-color:#0ff; }
+        input, textarea { background:#000; color:#0f0; border:1px solid #0f0; padding:8px; font-family:monospace; width:100%; }
+        .form-group { margin:10px 0; }
+        label { display:block; margin-bottom:5px; font-size:12px; }
+        .recipe-info { background:#000; padding:15px; margin:15px 0; border:1px solid #0f0; }
+        .active-badge { background:#0f0; color:#000; padding:2px 8px; margin-left:10px; font-weight:bold; font-size:10px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>📋 RECIPE MANAGER</h1>
+            <div style="margin-top:10px; font-size:12px;">
+                Production recipe and parameter management system
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>📚 Recipe Library</h2>
+                <button onclick="app.createNewRecipe()" style="width:100%;">+ New Recipe</button>
+                <div class="recipe-list" id="recipe-list"></div>
+            </div>
+
+            <div class="panel">
+                <div id="editor-container">
+                    <div style="text-align:center; color:#666; padding:50px;">
+                        Select a recipe to edit
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { RecipeManager } from '../components/recipe-manager.js';
+
+        class RecipeUI {
+            constructor() {
+                this.manager = new RecipeManager();
+                this.selectedRecipe = null;
+
+                this.setupDemoRecipes();
+                this.render();
+            }
+
+            setupDemoRecipes() {
+                const std = this.manager.create('Standard Production', 'Standard operating parameters');
+                std.set('Temperature', 50);
+                std.set('Pressure', 100);
+                std.set('Speed', 75);
+                std.set('Duration', 300);
+
+                const fast = this.manager.create('High Speed', 'Maximum production rate');
+                fast.set('Temperature', 65);
+                fast.set('Pressure', 120);
+                fast.set('Speed', 95);
+                fast.set('Duration', 180);
+
+                const quality = this.manager.create('Quality Mode', 'High quality production');
+                quality.set('Temperature', 45);
+                quality.set('Pressure', 90);
+                quality.set('Speed', 60);
+                quality.set('Duration', 450);
+
+                const test = this.manager.create('Test Recipe', 'Testing parameters');
+                test.set('Temperature', 25);
+                test.set('Pressure', 50);
+                test.set('Speed', 30);
+                test.set('Duration', 60);
+            }
+
+            render() {
+                this.renderRecipeList();
+                this.renderEditor();
+            }
+
+            renderRecipeList() {
+                const recipes = this.manager.list();
+                const active = this.manager.getActive();
+
+                let html = '';
+                recipes.forEach(name => {
+                    const recipe = this.manager.get(name);
+                    const isActive = active?.name === name;
+                    const isSelected = this.selectedRecipe?.name === name;
+
+                    html += `
+                        <div class="recipe-item ${isSelected ? 'active' : ''}"
+                             onclick="app.selectRecipe('${name}')">
+                            <strong>${name}</strong>
+                            ${isActive ? '<span class="active-badge">ACTIVE</span>' : ''}
+                            <div style="font-size:11px; color:#666; margin-top:5px;">
+                                ${recipe.description}
+                            </div>
+                            <div style="font-size:10px; color:#444; margin-top:3px;">
+                                Modified: ${recipe.modified.toLocaleString()}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('recipe-list').innerHTML = html;
+            }
+
+            renderEditor() {
+                const container = document.getElementById('editor-container');
+
+                if (!this.selectedRecipe) {
+                    container.innerHTML = `
+                        <div style="text-align:center; color:#666; padding:50px;">
+                            Select a recipe to edit
+                        </div>
+                    `;
+                    return;
+                }
+
+                const recipe = this.selectedRecipe;
+                const params = recipe.getAll();
+                const isActive = this.manager.getActive()?.name === recipe.name;
+
+                let paramsHtml = '';
+                Object.entries(params).forEach(([key, value]) => {
+                    paramsHtml += `
+                        <div class="param-row">
+                            <div class="param-name">${key}</div>
+                            <input type="number" class="param-value" value="${value}"
+                                   data-key="${key}" onchange="app.updateParam('${key}', this.value)">
+                            <button onclick="app.deleteParam('${key}')" class="danger">✕</button>
+                        </div>
+                    `;
+                });
+
+                container.innerHTML = `
+                    <div style="display:flex; justify-content:space-between; align-items:center;">
+                        <h2>${recipe.name}</h2>
+                        ${isActive ? '<span class="active-badge">ACTIVE</span>' : ''}
+                    </div>
+
+                    <div class="recipe-info">
+                        <div class="form-group">
+                            <label>Description</label>
+                            <textarea id="recipe-desc" rows="2"
+                                      onchange="app.updateDescription()">${recipe.description}</textarea>
+                        </div>
+
+                        <div style="font-size:11px; color:#666;">
+                            <div>Version: ${recipe.version}</div>
+                            <div>Created: ${recipe.created.toLocaleString()}</div>
+                            <div>Modified: ${recipe.modified.toLocaleString()}</div>
+                        </div>
+                    </div>
+
+                    <h3>Parameters</h3>
+                    <div class="param-grid">
+                        ${paramsHtml}
+                    </div>
+
+                    <div class="form-group">
+                        <button onclick="app.addParameter()">+ Add Parameter</button>
+                    </div>
+
+                    <hr style="border:1px solid #333; margin:20px 0;">
+
+                    <div>
+                        <button onclick="app.activateRecipe()" class="primary"
+                                ${isActive ? 'disabled' : ''}>
+                            ${isActive ? 'Currently Active' : 'Activate Recipe'}
+                        </button>
+                        <button onclick="app.cloneRecipe()">Clone Recipe</button>
+                        <button onclick="app.exportRecipe()">Export JSON</button>
+                        <button onclick="app.deleteRecipe()" class="danger">Delete Recipe</button>
+                    </div>
+                `;
+            }
+
+            selectRecipe(name) {
+                this.selectedRecipe = this.manager.get(name);
+                this.render();
+            }
+
+            createNewRecipe() {
+                const name = prompt('Recipe name:');
+                if (!name) return;
+
+                try {
+                    const desc = prompt('Description (optional):') || '';
+                    const recipe = this.manager.create(name, desc);
+                    this.selectedRecipe = recipe;
+                    this.render();
+                } catch (e) {
+                    alert(e.message);
+                }
+            }
+
+            updateDescription() {
+                if (!this.selectedRecipe) return;
+                const desc = document.getElementById('recipe-desc').value;
+                this.selectedRecipe.description = desc;
+                this.selectedRecipe.modified = new Date();
+                this.render();
+            }
+
+            updateParam(key, value) {
+                if (!this.selectedRecipe) return;
+                this.selectedRecipe.set(key, parseFloat(value));
+                this.render();
+            }
+
+            addParameter() {
+                if (!this.selectedRecipe) return;
+
+                const key = prompt('Parameter name:');
+                if (!key) return;
+
+                const value = prompt('Parameter value:', '0');
+                if (value === null) return;
+
+                this.selectedRecipe.set(key, parseFloat(value));
+                this.render();
+            }
+
+            deleteParam(key) {
+                if (!this.selectedRecipe) return;
+                if (confirm(`Delete parameter "${key}"?`)) {
+                    this.selectedRecipe.delete(key);
+                    this.render();
+                }
+            }
+
+            activateRecipe() {
+                if (!this.selectedRecipe) return;
+                this.manager.activate(this.selectedRecipe.name);
+                this.render();
+            }
+
+            cloneRecipe() {
+                if (!this.selectedRecipe) return;
+
+                const newName = prompt('New recipe name:', this.selectedRecipe.name + ' (Copy)');
+                if (!newName) return;
+
+                try {
+                    const clone = this.manager.clone(this.selectedRecipe.name, newName);
+                    this.selectedRecipe = clone;
+                    this.render();
+                } catch (e) {
+                    alert(e.message);
+                }
+            }
+
+            exportRecipe() {
+                if (!this.selectedRecipe) return;
+
+                const json = this.manager.exportRecipe(this.selectedRecipe.name);
+                const blob = new Blob([json], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `recipe-${this.selectedRecipe.name}.json`;
+                a.click();
+            }
+
+            deleteRecipe() {
+                if (!this.selectedRecipe) return;
+
+                if (confirm(`Delete recipe "${this.selectedRecipe.name}"? This cannot be undone.`)) {
+                    this.manager.delete(this.selectedRecipe.name);
+                    this.selectedRecipe = null;
+                    this.render();
+                }
+            }
+        }
+
+        window.app = new RecipeUI();
+    </script>
+</body>
+</html>

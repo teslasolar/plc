@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enhanced PLC Simulator | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; overflow:hidden; }
+        .app { display:flex; flex-direction:column; height:100vh; padding:10px; gap:10px; }
+        .header { background:#111; border:2px solid #0f0; padding:15px; }
+        .content { display:grid; grid-template-columns: 1fr 1fr; gap:10px; flex:1; overflow:hidden; }
+        .panel { background:#111; border:2px solid #0f0; padding:10px; overflow-y:auto; }
+        .section { margin-bottom:15px; }
+        .section h3 { color:#0f0; margin-bottom:8px; font-size:14px; }
+        .row { display:flex; justify-content:space-between; padding:4px; border-bottom:1px solid #222; font-size:12px; }
+        .status { font-weight:bold; }
+        .status.on { color:#0f0; }
+        .status.off { color:#666; }
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:6px 12px; margin:2px; cursor:pointer; font-family:monospace; font-size:11px; }
+        button:hover { background:#005500; }
+        input { background:#000; color:#0f0; border:1px solid #0f0; padding:4px; font-family:monospace; width:60px; font-size:11px; }
+        .alarm { background:#330000; border-left:3px solid #f00; padding:5px; margin:3px 0; font-size:11px; }
+        .alarm.warning { background:#333300; border-color:#ff0; }
+        .alarm.info { background:#003333; border-color:#0ff; }
+        .chart { background:#000; border:1px solid #0f0; height:100px; position:relative; margin:5px 0; }
+        .chart canvas { width:100%; height:100%; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>⚡ ENHANCED PLC SIMULATOR</h1>
+            <div style="margin-top:5px; font-size:12px;">
+                Timers • Counters • PID • Alarms • Historian • Recipes
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <div class="section">
+                    <h3>⏱️ Timers</h3>
+                    <div class="row">
+                        <span>TON-1 (On Delay):</span>
+                        <span class="status" id="ton1">OFF</span>
+                    </div>
+                    <div class="row">
+                        <span>Progress:</span>
+                        <span id="ton1-pct">0%</span>
+                    </div>
+                    <button onclick="app.toggleTimer('TON1')">Toggle Input</button>
+                    <button onclick="app.resetTimer('TON1')">Reset</button>
+                </div>
+
+                <div class="section">
+                    <h3>🔢 Counters</h3>
+                    <div class="row">
+                        <span>CTU-1 (Count Up):</span>
+                        <span id="ctu1">0 / 10</span>
+                    </div>
+                    <div class="row">
+                        <span>Done:</span>
+                        <span class="status" id="ctu1-done">OFF</span>
+                    </div>
+                    <button onclick="app.incrementCounter()">Count</button>
+                    <button onclick="app.resetCounter()">Reset</button>
+                </div>
+
+                <div class="section">
+                    <h3>🎛️ PID Controller</h3>
+                    <div class="row">
+                        <span>Setpoint:</span>
+                        <input type="number" id="pid-sp" value="50" onchange="app.updatePID()">
+                    </div>
+                    <div class="row">
+                        <span>Process Value:</span>
+                        <span id="pid-pv">0.0</span>
+                    </div>
+                    <div class="row">
+                        <span>Output:</span>
+                        <span id="pid-out">0.0</span>
+                    </div>
+                    <div class="row">
+                        <span>Error:</span>
+                        <span id="pid-err">0.0</span>
+                    </div>
+                    <div style="margin-top:5px; font-size:10px;">
+                        Kp: <input type="number" id="pid-kp" value="1.0" step="0.1" onchange="app.updatePID()">
+                        Ki: <input type="number" id="pid-ki" value="0.1" step="0.01" onchange="app.updatePID()">
+                        Kd: <input type="number" id="pid-kd" value="0.05" step="0.01" onchange="app.updatePID()">
+                    </div>
+                    <button onclick="app.resetPID()">Reset PID</button>
+                </div>
+
+                <div class="section">
+                    <h3>📊 Historian</h3>
+                    <div class="chart" id="chart"></div>
+                    <button onclick="app.historian.clearAll()">Clear Data</button>
+                    <button onclick="app.exportData()">Export CSV</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="section">
+                    <h3>🚨 Alarms (<span id="alarm-count">0</span>)</h3>
+                    <div id="alarm-list"></div>
+                    <button onclick="app.alarms.acknowledgeAll()">Acknowledge All</button>
+                </div>
+
+                <div class="section">
+                    <h3>📋 Recipes</h3>
+                    <div class="row">
+                        <span>Active Recipe:</span>
+                        <span id="active-recipe">None</span>
+                    </div>
+                    <select id="recipe-select" onchange="app.activateRecipe()">
+                        <option value="">-- Select --</option>
+                    </select>
+                    <button onclick="app.createRecipe()">New Recipe</button>
+                    <button onclick="app.exportRecipe()">Export</button>
+                </div>
+
+                <div class="section">
+                    <h3>📈 Statistics</h3>
+                    <div class="row">
+                        <span>Scan Count:</span>
+                        <span id="scan-count">0</span>
+                    </div>
+                    <div class="row">
+                        <span>Active Alarms:</span>
+                        <span id="active-alarms">0</span>
+                    </div>
+                    <div class="row">
+                        <span>Data Points:</span>
+                        <span id="data-points">0</span>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <h3>ℹ️ About</h3>
+                    <p style="font-size:11px; line-height:1.6;">
+                        This enhanced simulator demonstrates all advanced PLC features:
+                        <br><br>
+                        <strong>Timers:</strong> TON, TOF, RTO with millisecond precision<br>
+                        <strong>Counters:</strong> CTU/CTD with presets<br>
+                        <strong>PID:</strong> Full PID controller with tunable gains<br>
+                        <strong>Alarms:</strong> Real-time alarm management<br>
+                        <strong>Historian:</strong> Time-series data logging<br>
+                        <strong>Recipes:</strong> Parameter management
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+        import { Timer, TimerManager } from '../components/timer.js';
+        import { Counter, CounterManager } from '../components/counter.js';
+        import { PID } from '../components/pid.js';
+        import { AlarmSystem } from '../components/alarm-system.js';
+        import { Historian } from '../components/historian.js';
+        import { RecipeManager } from '../components/recipe-manager.js';
+
+        class EnhancedSimulator {
+            constructor() {
+                this.plc = new PLC('AB', 1);
+                this.plc.init();
+
+                this.timers = new TimerManager();
+                this.counters = new CounterManager();
+                this.pid = new PID(1.0, 0.1, 0.05);
+                this.alarms = new AlarmSystem();
+                this.historian = new Historian();
+                this.recipes = new RecipeManager();
+
+                this.processValue = 0;
+                this.timerInput = false;
+                this.scanCount = 0;
+
+                this.setup();
+                this.start();
+            }
+
+            setup() {
+                // Create timer
+                this.timers.add('TON1', 'TON', 5000);
+
+                // Create counter
+                this.counters.add('CTU1', 'CTU', 10);
+
+                // Setup PID
+                this.pid.setpoint = 50;
+                this.pid.setLimits(0, 100);
+
+                // Setup alarms
+                this.alarms.add('HIGH_TEMP', () => this.processValue > 80, 'CRITICAL', 'Process value too high!');
+                this.alarms.add('LOW_TEMP', () => this.processValue < 20, 'WARNING', 'Process value too low');
+                this.alarms.add('COUNTER_DONE', () => this.counters.get('CTU1').done, 'INFO', 'Counter reached preset');
+
+                // Setup historian
+                this.historian.addTag('ProcessValue', () => this.processValue, 500);
+                this.historian.addTag('PIDOutput', () => this.pid.output, 500);
+                this.historian.addTag('Setpoint', () => this.pid.setpoint, 500);
+                this.historian.start();
+
+                // Create default recipes
+                const r1 = this.recipes.create('Standard', 'Standard production parameters');
+                r1.set('Temperature', 50);
+                r1.set('Pressure', 100);
+                r1.set('Speed', 75);
+
+                const r2 = this.recipes.create('High Speed', 'High speed production');
+                r2.set('Temperature', 60);
+                r2.set('Pressure', 120);
+                r2.set('Speed', 95);
+
+                this.updateRecipeList();
+
+                this.plc.setState('EXECUTE');
+            }
+
+            start() {
+                setInterval(() => this.scan(), 100);
+            }
+
+            scan() {
+                this.scanCount++;
+
+                // Update timer
+                const timer = this.timers.get('TON1');
+                timer.update(this.timerInput);
+
+                // Update PID
+                const output = this.pid.compute(this.processValue);
+                this.processValue += (output - 50) * 0.01;
+                this.processValue = Math.max(0, Math.min(100, this.processValue));
+
+                // Scan alarms
+                this.alarms.scan();
+
+                this.updateUI();
+            }
+
+            updateUI() {
+                const timer = this.timers.get('TON1');
+                document.getElementById('ton1').textContent = timer.done ? 'DONE' : 'TIMING';
+                document.getElementById('ton1').className = 'status ' + (timer.done ? 'on' : 'off');
+                document.getElementById('ton1-pct').textContent = timer.getPercent().toFixed(1) + '%';
+
+                const counter = this.counters.get('CTU1');
+                document.getElementById('ctu1').textContent = `${counter.acc} / ${counter.preset}`;
+                document.getElementById('ctu1-done').textContent = counter.done ? 'DONE' : 'COUNTING';
+                document.getElementById('ctu1-done').className = 'status ' + (counter.done ? 'on' : 'off');
+
+                document.getElementById('pid-pv').textContent = this.processValue.toFixed(2);
+                document.getElementById('pid-out').textContent = this.pid.output.toFixed(2);
+                document.getElementById('pid-err').textContent = this.pid.lastError.toFixed(2);
+
+                // Alarms
+                const active = this.alarms.getActive();
+                document.getElementById('alarm-count').textContent = active.length;
+                document.getElementById('active-alarms').textContent = active.length;
+
+                let alarmHtml = '';
+                active.forEach(alarm => {
+                    const cls = alarm.severity.toLowerCase();
+                    alarmHtml += `<div class="alarm ${cls}">[${alarm.severity}] ${alarm.name}: ${alarm.message}</div>`;
+                });
+                document.getElementById('alarm-list').innerHTML = alarmHtml || '<div style="font-size:11px; color:#666;">No active alarms</div>';
+
+                // Stats
+                document.getElementById('scan-count').textContent = this.scanCount;
+                const pvTag = this.historian.getTag('ProcessValue');
+                document.getElementById('data-points').textContent = pvTag ? pvTag.data.length : 0;
+
+                // Active recipe
+                const activeRecipe = this.recipes.getActive();
+                document.getElementById('active-recipe').textContent = activeRecipe ? activeRecipe.name : 'None';
+            }
+
+            toggleTimer(name) {
+                this.timerInput = !this.timerInput;
+            }
+
+            resetTimer(name) {
+                this.timers.reset(name);
+            }
+
+            incrementCounter() {
+                const counter = this.counters.get('CTU1');
+                counter.count(true);
+            }
+
+            resetCounter() {
+                this.counters.reset('CTU1');
+            }
+
+            updatePID() {
+                const kp = parseFloat(document.getElementById('pid-kp').value);
+                const ki = parseFloat(document.getElementById('pid-ki').value);
+                const kd = parseFloat(document.getElementById('pid-kd').value);
+                this.pid.setTunings(kp, ki, kd);
+
+                const sp = parseFloat(document.getElementById('pid-sp').value);
+                this.pid.setpoint = sp;
+            }
+
+            resetPID() {
+                this.pid.reset();
+                this.processValue = 0;
+            }
+
+            updateRecipeList() {
+                const select = document.getElementById('recipe-select');
+                select.innerHTML = '<option value="">-- Select --</option>';
+                this.recipes.list().forEach(name => {
+                    const opt = document.createElement('option');
+                    opt.value = name;
+                    opt.textContent = name;
+                    select.appendChild(opt);
+                });
+            }
+
+            activateRecipe() {
+                const name = document.getElementById('recipe-select').value;
+                if (name) {
+                    this.recipes.activate(name);
+                    const recipe = this.recipes.getActive();
+                    if (recipe.has('Temperature')) {
+                        this.pid.setpoint = recipe.get('Temperature');
+                        document.getElementById('pid-sp').value = recipe.get('Temperature');
+                    }
+                }
+            }
+
+            createRecipe() {
+                const name = prompt('Recipe name:');
+                if (name) {
+                    try {
+                        this.recipes.create(name, 'User created recipe');
+                        this.updateRecipeList();
+                    } catch (e) {
+                        alert(e.message);
+                    }
+                }
+            }
+
+            exportRecipe() {
+                const name = document.getElementById('recipe-select').value;
+                if (name) {
+                    const json = this.recipes.exportRecipe(name);
+                    const blob = new Blob([json], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `recipe-${name}.json`;
+                    a.click();
+                }
+            }
+
+            exportData() {
+                const csv = this.historian.exportCSV();
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'historian-data.csv';
+                a.click();
+            }
+        }
+
+        window.app = new EnhancedSimulator();
+    </script>
+</body>
+</html>

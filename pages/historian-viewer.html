@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Data Historian | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; }
+        .app { padding:20px; }
+        .header { background:#111; border:2px solid #0f0; padding:20px; margin-bottom:20px; }
+        .content { display:grid; grid-template-columns: 3fr 1fr; gap:20px; }
+        .panel { background:#111; border:2px solid #0f0; padding:15px; }
+        .chart-container { background:#000; border:1px solid #0f0; padding:10px; margin:10px 0; }
+        .chart { height:200px; position:relative; }
+        canvas { width:100%; height:100%; }
+        .stats-grid { display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin:10px 0; }
+        .stat { background:#000; padding:8px; border:1px solid #0f0; }
+        .stat-label { font-size:11px; color:#666; }
+        .stat-value { font-size:18px; font-weight:bold; margin-top:3px; }
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:8px 16px; margin:5px; cursor:pointer; font-family:monospace; font-size:12px; }
+        button:hover { background:#005500; }
+        .tag-list { margin:10px 0; }
+        .tag-item { background:#000; padding:8px; margin:5px 0; border-left:3px solid #0f0; cursor:pointer; }
+        .tag-item:hover { background:#111; }
+        .tag-item.active { background:#003300; border-color:#0ff; }
+        input[type="checkbox"] { margin-right:8px; }
+        select { background:#000; color:#0f0; border:1px solid #0f0; padding:6px; font-family:monospace; font-size:12px; margin:5px; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>📊 DATA HISTORIAN & TRENDING</h1>
+            <div style="margin-top:10px; font-size:12px;">
+                Real-time process data logging and visualization
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>📈 Real-time Trends</h2>
+
+                <div class="chart-container">
+                    <h3>Temperature (°C)</h3>
+                    <div class="chart" id="chart-temp">
+                        <canvas id="canvas-temp"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Pressure (PSI)</h3>
+                    <div class="chart" id="chart-pressure">
+                        <canvas id="canvas-pressure"></canvas>
+                    </div>
+                </div>
+
+                <div class="chart-container">
+                    <h3>Flow Rate (L/min)</h3>
+                    <div class="chart" id="chart-flow">
+                        <canvas id="canvas-flow"></canvas>
+                    </div>
+                </div>
+
+                <div style="margin-top:20px;">
+                    <label>Time Range:
+                        <select id="time-range" onchange="app.updateTimeRange()">
+                            <option value="30">Last 30 seconds</option>
+                            <option value="60" selected>Last 1 minute</option>
+                            <option value="300">Last 5 minutes</option>
+                            <option value="600">Last 10 minutes</option>
+                        </select>
+                    </label>
+                    <button onclick="app.exportCSV()">Export to CSV</button>
+                    <button onclick="app.clearData()">Clear Data</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>📋 Tags</h2>
+                <div class="tag-list" id="tag-list"></div>
+
+                <h2 style="margin-top:20px;">📊 Statistics</h2>
+                <div id="stats-container"></div>
+
+                <h2 style="margin-top:20px;">⚙️ Settings</h2>
+                <div style="font-size:11px; margin:10px 0;">
+                    <div style="margin:8px 0;">
+                        Sample Rate:
+                        <select id="sample-rate" onchange="app.updateSampleRate()">
+                            <option value="100">100ms</option>
+                            <option value="250">250ms</option>
+                            <option value="500" selected>500ms</option>
+                            <option value="1000">1s</option>
+                            <option value="5000">5s</option>
+                        </select>
+                    </div>
+                    <div style="margin:8px 0;">
+                        Max Points: <span id="max-points">1000</span>
+                    </div>
+                    <div style="margin:8px 0;">
+                        Data Points: <span id="data-points">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { Historian } from '../components/historian.js';
+
+        class HistorianViewer {
+            constructor() {
+                this.historian = new Historian();
+
+                // Simulated process values
+                this.temp = 50;
+                this.pressure = 100;
+                this.flow = 75;
+
+                this.setupTags();
+                this.historian.start();
+
+                // Start simulation
+                setInterval(() => this.simulate(), 100);
+                setInterval(() => this.render(), 100);
+
+                this.render();
+            }
+
+            setupTags() {
+                this.historian.addTag('Temperature', () => this.temp, 500);
+                this.historian.addTag('Pressure', () => this.pressure, 500);
+                this.historian.addTag('FlowRate', () => this.flow, 500);
+            }
+
+            simulate() {
+                // Simulate realistic process behavior
+                this.temp += (Math.random() - 0.5) * 2 + (60 - this.temp) * 0.01;
+                this.pressure += (Math.random() - 0.5) * 3 + (110 - this.pressure) * 0.02;
+                this.flow += (Math.random() - 0.5) * 5 + (80 - this.flow) * 0.015;
+
+                this.temp = Math.max(20, Math.min(100, this.temp));
+                this.pressure = Math.max(50, Math.min(150, this.pressure));
+                this.flow = Math.max(0, Math.min(120, this.flow));
+            }
+
+            render() {
+                this.drawChart('canvas-temp', 'Temperature', '#f00', 0, 100);
+                this.drawChart('canvas-pressure', 'Pressure', '#0ff', 50, 150);
+                this.drawChart('canvas-flow', 'FlowRate', '#ff0', 0, 120);
+
+                this.renderTagList();
+                this.renderStats();
+            }
+
+            drawChart(canvasId, tagName, color, minY, maxY) {
+                const canvas = document.getElementById(canvasId);
+                const ctx = canvas.getContext('2d');
+
+                canvas.width = canvas.offsetWidth;
+                canvas.height = canvas.offsetHeight;
+
+                const tag = this.historian.getTag(tagName);
+                if (!tag || tag.data.length === 0) return;
+
+                const data = tag.data;
+                const width = canvas.width;
+                const height = canvas.height;
+
+                ctx.clearRect(0, 0, width, height);
+
+                // Grid
+                ctx.strokeStyle = '#222';
+                ctx.lineWidth = 1;
+                for (let i = 0; i <= 5; i++) {
+                    const y = (height / 5) * i;
+                    ctx.beginPath();
+                    ctx.moveTo(0, y);
+                    ctx.lineTo(width, y);
+                    ctx.stroke();
+                }
+
+                // Data line
+                ctx.strokeStyle = color;
+                ctx.lineWidth = 2;
+                ctx.beginPath();
+
+                const now = Date.now();
+                const timeRange = 60000; // 60 seconds
+
+                data.forEach((point, i) => {
+                    const age = now - point.timestamp;
+                    if (age > timeRange) return;
+
+                    const x = width - (age / timeRange) * width;
+                    const y = height - ((point.value - minY) / (maxY - minY)) * height;
+
+                    if (i === 0) {
+                        ctx.moveTo(x, y);
+                    } else {
+                        ctx.lineTo(x, y);
+                    }
+                });
+
+                ctx.stroke();
+
+                // Current value
+                const current = data[data.length - 1]?.value || 0;
+                ctx.fillStyle = color;
+                ctx.font = '14px monospace';
+                ctx.fillText(current.toFixed(1), 10, 20);
+
+                // Y-axis labels
+                ctx.fillStyle = '#666';
+                ctx.font = '10px monospace';
+                ctx.fillText(maxY, 5, 12);
+                ctx.fillText(minY, 5, height - 2);
+            }
+
+            renderTagList() {
+                const tags = Array.from(this.historian.tags.values());
+                let html = '';
+
+                tags.forEach(tag => {
+                    const current = tag.data[tag.data.length - 1]?.value || 0;
+                    html += `
+                        <div class="tag-item active">
+                            <input type="checkbox" checked disabled>
+                            <strong>${tag.name}</strong>
+                            <div style="float:right;">${current.toFixed(2)}</div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('tag-list').innerHTML = html;
+            }
+
+            renderStats() {
+                const tags = Array.from(this.historian.tags.values());
+                let html = '<div class="stats-grid">';
+
+                tags.forEach(tag => {
+                    const stats = tag.stats;
+                    html += `
+                        <div class="stat">
+                            <div class="stat-label">${tag.name} Min</div>
+                            <div class="stat-value">${stats.min.toFixed(1)}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">${tag.name} Max</div>
+                            <div class="stat-value">${stats.max.toFixed(1)}</div>
+                        </div>
+                    `;
+                });
+
+                html += '</div>';
+                document.getElementById('stats-container').innerHTML = html;
+
+                // Update data points
+                const totalPoints = tags.reduce((sum, tag) => sum + tag.data.length, 0);
+                document.getElementById('data-points').textContent = totalPoints;
+            }
+
+            updateTimeRange() {
+                // Would adjust chart rendering time range
+                this.render();
+            }
+
+            updateSampleRate() {
+                const rate = parseInt(document.getElementById('sample-rate').value);
+                this.historian.tags.forEach(tag => {
+                    tag.sampleRate = rate;
+                });
+            }
+
+            exportCSV() {
+                const csv = this.historian.exportCSV();
+                const blob = new Blob([csv], { type: 'text/csv' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `historian-${Date.now()}.csv`;
+                a.click();
+            }
+
+            clearData() {
+                if (confirm('Clear all historical data?')) {
+                    this.historian.clearAll();
+                    this.render();
+                }
+            }
+        }
+
+        window.app = new HistorianViewer();
+    </script>
+</body>
+</html>

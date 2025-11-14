@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alarm Viewer | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; }
+        .app { padding:20px; }
+        .header { background:#111; border:2px solid #0f0; padding:20px; margin-bottom:20px; }
+        .stats { display:flex; gap:30px; margin-top:15px; }
+        .stat-box { background:#000; border:2px solid #0f0; padding:15px; flex:1; text-align:center; }
+        .stat-value { font-size:36px; font-weight:bold; margin:10px 0; }
+        .stat-value.critical { color:#f00; }
+        .stat-value.warning { color:#ff0; }
+        .stat-value.info { color:#0ff; }
+        .content { display:grid; grid-template-columns: 2fr 1fr; gap:20px; }
+        .panel { background:#111; border:2px solid #0f0; padding:15px; }
+        .alarm-item { background:#000; border-left:4px solid #f00; padding:10px; margin:8px 0; cursor:pointer; }
+        .alarm-item:hover { background:#111; }
+        .alarm-item.warning { border-color:#ff0; }
+        .alarm-item.info { border-color:#0ff; }
+        .alarm-item.acked { opacity:0.6; }
+        .alarm-header { display:flex; justify-content:space-between; font-weight:bold; margin-bottom:5px; }
+        .alarm-time { font-size:11px; color:#666; }
+        .alarm-message { font-size:12px; margin-top:5px; }
+        .history-item { background:#000; padding:8px; margin:5px 0; font-size:11px; border-left:3px solid #0f0; }
+        .history-item.activated { border-color:#f00; }
+        .history-item.cleared { border-color:#0f0; }
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:8px 16px; margin:5px; cursor:pointer; font-family:monospace; font-size:12px; }
+        button:hover { background:#005500; }
+        button.danger { background:#330000; color:#f00; border-color:#f00; }
+        button.danger:hover { background:#550000; }
+        select { background:#000; color:#0f0; border:1px solid #0f0; padding:6px; font-family:monospace; font-size:12px; }
+        .filter-bar { background:#000; padding:10px; margin-bottom:15px; border:1px solid #0f0; }
+    </style>
+</head>
+<body>
+    <div class="app">
+        <div class="header">
+            <h1>🚨 ALARM VIEWER</h1>
+            <div class="stats">
+                <div class="stat-box">
+                    <div>Total Active</div>
+                    <div class="stat-value" id="total-active">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Critical</div>
+                    <div class="stat-value critical" id="critical">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Warning</div>
+                    <div class="stat-value warning" id="warning">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Info</div>
+                    <div class="stat-value info" id="info">0</div>
+                </div>
+                <div class="stat-box">
+                    <div>Unacknowledged</div>
+                    <div class="stat-value" id="unacked">0</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="content">
+            <div class="panel">
+                <h2>📋 Active Alarms</h2>
+                <div class="filter-bar">
+                    <label>Filter:
+                        <select id="filter" onchange="app.render()">
+                            <option value="all">All</option>
+                            <option value="unacked">Unacknowledged Only</option>
+                            <option value="critical">Critical</option>
+                            <option value="warning">Warning</option>
+                            <option value="info">Info</option>
+                        </select>
+                    </label>
+                    <button onclick="app.alarms.acknowledgeAll()">Acknowledge All</button>
+                    <button onclick="app.clearHistory()" class="danger">Clear History</button>
+                </div>
+                <div id="alarm-list"></div>
+            </div>
+
+            <div class="panel">
+                <h2>📜 Alarm History</h2>
+                <div id="history-list" style="max-height:600px; overflow-y:auto;"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { AlarmSystem } from '../components/alarm-system.js';
+
+        class AlarmViewer {
+            constructor() {
+                this.alarms = new AlarmSystem();
+                this.setupDemoAlarms();
+                this.alarms.onAlarm((alarm, event) => this.render());
+                setInterval(() => this.scan(), 1000);
+                this.render();
+            }
+
+            setupDemoAlarms() {
+                // Simulated alarms for demo
+                let temp = 25;
+                let pressure = 50;
+                let level = 30;
+                let motor = false;
+
+                setInterval(() => {
+                    temp += (Math.random() - 0.5) * 10;
+                    pressure += (Math.random() - 0.5) * 5;
+                    level += (Math.random() - 0.5) * 3;
+                    motor = Math.random() > 0.7;
+                }, 2000);
+
+                this.alarms.add('TEMP_HIGH', () => temp > 80, 'CRITICAL', 'Temperature exceeded 80°C');
+                this.alarms.add('TEMP_LOW', () => temp < 15, 'WARNING', 'Temperature below 15°C');
+                this.alarms.add('PRESSURE_HIGH', () => pressure > 90, 'CRITICAL', 'Pressure exceeded 90 PSI');
+                this.alarms.add('PRESSURE_LOW', () => pressure < 20, 'WARNING', 'Pressure below 20 PSI');
+                this.alarms.add('LEVEL_HIGH', () => level > 85, 'WARNING', 'Level above 85%');
+                this.alarms.add('LEVEL_LOW', () => level < 10, 'CRITICAL', 'Level critically low');
+                this.alarms.add('MOTOR_FAULT', () => motor, 'CRITICAL', 'Motor fault detected');
+                this.alarms.add('SYSTEM_OK', () => temp > 20 && temp < 75, 'INFO', 'System operating normally');
+            }
+
+            scan() {
+                this.alarms.scan();
+                this.render();
+            }
+
+            render() {
+                const summary = this.alarms.getSummary();
+                document.getElementById('total-active').textContent = summary.active;
+                document.getElementById('critical').textContent = summary.critical;
+                document.getElementById('warning').textContent = summary.warning;
+                document.getElementById('info').textContent = summary.info;
+                document.getElementById('unacked').textContent = summary.unacknowledged;
+
+                // Active alarms
+                const filter = document.getElementById('filter').value;
+                let active = this.alarms.getActive();
+
+                if (filter === 'unacked') {
+                    active = this.alarms.getUnacknowledged();
+                } else if (filter !== 'all') {
+                    active = active.filter(a => a.severity.toLowerCase() === filter);
+                }
+
+                let listHtml = '';
+                active.forEach(alarm => {
+                    const cls = alarm.severity.toLowerCase() + (alarm.acknowledged ? ' acked' : '');
+                    const ackStatus = alarm.acknowledged ? '✓ ACK' : '! UNACK';
+                    listHtml += `
+                        <div class="alarm-item ${cls}" onclick="app.acknowledge('${alarm.name}')">
+                            <div class="alarm-header">
+                                <span>[${alarm.severity}] ${alarm.name}</span>
+                                <span>${ackStatus}</span>
+                            </div>
+                            <div class="alarm-message">${alarm.message}</div>
+                            <div class="alarm-time">
+                                ${alarm.timestamp.toLocaleTimeString()} | Count: ${alarm.count}
+                            </div>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('alarm-list').innerHTML = listHtml ||
+                    '<div style="color:#666; padding:20px; text-align:center;">No active alarms</div>';
+
+                // History
+                const history = this.alarms.getHistory(50);
+                let historyHtml = '';
+                history.forEach(entry => {
+                    const cls = entry.event.toLowerCase();
+                    historyHtml += `
+                        <div class="history-item ${cls}">
+                            <strong>${entry.timestamp.toLocaleTimeString()}</strong> -
+                            [${entry.severity}] ${entry.name} - ${entry.event}
+                            <br><span style="color:#666;">${entry.message}</span>
+                        </div>
+                    `;
+                });
+
+                document.getElementById('history-list').innerHTML = historyHtml ||
+                    '<div style="color:#666; padding:10px;">No history</div>';
+            }
+
+            acknowledge(name) {
+                this.alarms.acknowledge(name);
+                this.render();
+            }
+
+            clearHistory() {
+                if (confirm('Clear all alarm history?')) {
+                    this.alarms.history = [];
+                    this.render();
+                }
+            }
+        }
+
+        window.app = new AlarmViewer();
+    </script>
+</body>
+</html>
