@@ -1,0 +1,13 @@
+{
+  "vendor": "Mitsu",
+  "name": "Mitsubishi",
+  "fullName": "FX5U PLC",
+  "series": "FX5U-64MR/ES",
+  "color": "#cc0000",
+  "colorHex": "0xcc0000",
+  "manufacturer": "Mitsubishi Electric",
+  "country": "Japan",
+  "syntax": "ladder",
+  "scanRate": 10,
+  "scanRateUnit": "ms"
+}

@@ -1,0 +1,13 @@
+{
+  "vendor": "AB",
+  "name": "Allen-Bradley",
+  "fullName": "Logix5000 Controller",
+  "series": "ControlLogix 5580",
+  "color": "#0066cc",
+  "colorHex": "0x0066cc",
+  "manufacturer": "Rockwell Automation",
+  "country": "USA",
+  "syntax": "ladder",
+  "scanRate": 10,
+  "scanRateUnit": "ms"
+}

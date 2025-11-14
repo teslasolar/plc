@@ -48,14 +48,16 @@
 
 ## 🚀 Quick Start
 
-### Online Demo
-Simply open `index.html` in a modern web browser (Chrome, Firefox, Edge, Safari).
+### 🌐 Live Demo
+**[Try it now on GitHub Pages!](https://teslasolar.github.io/plc/)**
 
-**Or deploy to GitHub Pages:**
+No installation required - runs directly in your browser!
+
+### Local Development
 
 ```bash
 # Clone the repository
-git clone https://github.com/yourusername/plc.git
+git clone https://github.com/teslasolar/plc.git
 cd plc
 
 # Open locally
@@ -121,6 +123,72 @@ python3 -m http.server 8000
 │          ISA-95 L0 (Field Devices - Sensors/Actuators)  │
 └─────────────────────────────────────────────────────────┘
 ```
+
+---
+
+## 📁 Repository Structure
+
+```
+plc/
+├── index.html              # Single-file simulator (production ready)
+├── vendors/                # Modular vendor configurations
+│   ├── allen-bradley/
+│   │   ├── config.json    # Device parameters
+│   │   ├── io-specs.json  # I/O mapping
+│   │   ├── ladder-examples.md
+│   │   └── quick-start.md
+│   ├── siemens/
+│   │   ├── config.json
+│   │   ├── io-specs.json
+│   │   └── stl-examples.md
+│   └── mitsubishi/
+│       ├── config.json
+│       ├── io-specs.json
+│       └── ladder-examples.md
+├── games/                  # Interactive PLC game challenges
+│   ├── conveyor-challenge.md
+│   ├── traffic-light-simulator.md
+│   └── tank-fill-control.md
+└── examples/              # Digital twin case studies
+    ├── digital-twin-assembly-line.md
+    ├── digital-twin-water-treatment.md
+    └── ai-powered-rapid-prototyping.md
+```
+
+**Modular Design**: Each vendor is <250 tokens per file for scalability!
+
+---
+
+## 🎮 Interactive Games & Challenges
+
+Try these built-in game challenges to learn PLC programming:
+
+1. **🏭 Conveyor Challenge**: Sort 100 products by weight in 60 seconds
+2. **🚦 Traffic Light Simulator**: Control a 4-way intersection without accidents
+3. **🛢️ Tank Fill Control**: Fill tanks to exact setpoint without overflow
+
+See the `/games` directory for implementation details!
+
+---
+
+## 🚀 AI-Powered Digital Twins
+
+This simulator demonstrates how AI can create digital twins in minutes vs months:
+
+| Traditional Method | AI Digital Twin |
+|-------------------|-----------------|
+| 6-12 months | **15-40 minutes** |
+| $500K-$2M | **$0** |
+| Physical prototype required | **Virtual only** |
+| Limited iteration | **Unlimited** |
+
+**Real examples built with this tech:**
+- ✅ Automotive assembly line - 15 min
+- ✅ Water treatment plant - 20 min
+- ✅ Bottling line - 25 min
+- ✅ Warehouse AGV fleet - 30 min
+
+See `/examples` for detailed case studies!
 
 ---
 

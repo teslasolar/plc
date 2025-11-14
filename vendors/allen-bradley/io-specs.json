@@ -1,0 +1,30 @@
+{
+  "digitalInputs": 16,
+  "digitalOutputs": 16,
+  "analogInputs": 8,
+  "analogOutputs": 8,
+  "maxIOPoints": 128000,
+  "voltage": "24VDC",
+  "mapping": {
+    "DI": {
+      "0": "StartButton",
+      "1": "StopButton",
+      "2": "ProductSensor",
+      "3": "EmergencyStop",
+      "4": "HighLevel",
+      "5": "LowLevel",
+      "6": "DoorClosed",
+      "7": "SafetyMat"
+    },
+    "DO": {
+      "0": "MotorRun",
+      "1": "ConveyorRun",
+      "2": "AlarmLight",
+      "3": "SolenoidValve",
+      "4": "Heater",
+      "5": "Pump",
+      "6": "Fan",
+      "7": "Buzzer"
+    }
+  }
+}

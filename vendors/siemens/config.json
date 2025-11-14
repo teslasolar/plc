@@ -1,0 +1,13 @@
+{
+  "vendor": "Siemens",
+  "name": "Siemens",
+  "fullName": "S7-1500 PLC",
+  "series": "S7-1515-2 PN",
+  "color": "#009999",
+  "colorHex": "0x009999",
+  "manufacturer": "Siemens AG",
+  "country": "Germany",
+  "syntax": "stl",
+  "scanRate": 20,
+  "scanRateUnit": "ms"
+}
