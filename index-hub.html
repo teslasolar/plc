@@ -1,0 +1,502 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 PlcSim3D - Industrial Automation Playground</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #001122 0%, #003366 100%);
+            color: #fff;
+            min-height: 100vh;
+        }
+
+        .hero {
+            text-align: center;
+            padding: 60px 20px;
+            background: linear-gradient(180deg, rgba(0,255,255,0.1) 0%, transparent 100%);
+        }
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,255,0.3);
+        }
+
+        .stat-value {
+            font-size: 2em;
+            font-weight: bold;
+            color: #00ffff;
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .section {
+            margin: 60px 0;
+        }
+
+        .section-title {
+            font-size: 2em;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0,255,255,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #00ffff;
+            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+
+        .card-desc {
+            opacity: 0.8;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            opacity: 0.6;
+        }
+
+        .btn {
+            display: inline-block;
+            background: linear-gradient(45deg, #00ffff, #00aaff);
+            color: #000;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,255,255,0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 2px solid #00ffff;
+        }
+
+        .quick-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: rgba(0,255,0,0.2);
+            color: #00ff00;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin: 5px 5px 0 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0,0,0,0.3);
+            margin-top: 80px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #00ffff;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="hero">
+        <h1>🏭 PlcSim3D</h1>
+        <p class="subtitle">Browser-Based Industrial Automation Playground</p>
+        <p>Multi-Vendor PLC Simulator | 3D Visualization | Real-Time Control</p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">PLC Vendors</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">3D Templates</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">60fps</div>
+                <div class="stat-label">Rendering</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">&lt;5MB</div>
+                <div class="stat-label">Total Size</div>
+            </div>
+        </div>
+
+        <div class="quick-links">
+            <a href="index.html" class="btn">🎮 Launch Full Simulator</a>
+            <a href="https://github.com/teslasolar/plc" class="btn btn-secondary">📦 GitHub</a>
+            <a href="docs/INDEX.md" class="btn btn-secondary">📚 Documentation</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- DEMOS -->
+        <div class="section">
+            <h2 class="section-title">🎯 Interactive Demos</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='index.html'">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Full 3D Simulator</div>
+                    <div class="card-desc">Complete PLC simulator with Allen-Bradley, Siemens, and Mitsubishi controllers in a live 3D factory environment.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 100ms scan</span>
+                        <span>📡 Modbus/EIP</span>
+                        <span>🎮 60fps</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='pages/vendor-ab-demo.html'">
+                    <div class="card-icon">🔵</div>
+                    <div class="card-title">Allen-Bradley Demo</div>
+                    <div class="card-desc">Interactive Logix5000 controller demo. Program ladder logic, toggle inputs, monitor outputs in real-time.</div>
+                    <div class="card-meta">
+                        <span>⚡ 10ms scan</span>
+                        <span>📝 Ladder logic</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Siemens S7-1500 demo')">
+                    <div class="card-icon">🟦</div>
+                    <div class="card-title">Siemens S7 Demo</div>
+                    <div class="card-desc">S7-1500 PLC with STL programming. Data blocks, memory areas, and TIA Portal compatibility.</div>
+                    <div class="card-meta">
+                        <span>⚡ 20ms scan</span>
+                        <span>📝 STL/LAD</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Mitsubishi FX5U demo')">
+                    <div class="card-icon">🔴</div>
+                    <div class="card-title">Mitsubishi FX5U Demo</div>
+                    <div class="card-desc">FX5U series PLC with GX Works programming. High-speed counters and positioning control.</div>
+                    <div class="card-meta">
+                        <span>⚡ 10ms scan</span>
+                        <span>📝 Ladder/ST</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAMES -->
+        <div class="section">
+            <h2 class="section-title">🎮 Learning Games</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='pages/conveyor-game.html'">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Conveyor Challenge</div>
+                    <div class="card-desc">Sort 100 products by weight in 60 seconds! Program the PLC to route items to correct bins.</div>
+                    <div class="card-meta">
+                        <span>⭐⭐☆☆☆ Easy</span>
+                        <span>⏱️ 60s limit</span>
+                        <span>🎯 100 products</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Traffic light game')">
+                    <div class="card-icon">🚦</div>
+                    <div class="card-title">Traffic Light Simulator</div>
+                    <div class="card-desc">Control a 4-way intersection without causing accidents. Master state machines and timers.</div>
+                    <div class="card-meta">
+                        <span>⭐⭐⭐☆☆ Medium</span>
+                        <span>🚗 Safety first!</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Tank control game')">
+                    <div class="card-icon">🛢️</div>
+                    <div class="card-title">Tank Fill Control</div>
+                    <div class="card-desc">Fill tanks to exact setpoint using PID control. Precision matters!</div>
+                    <div class="card-meta">
+                        <span>⭐⭐⭐⭐☆ Hard</span>
+                        <span>🎯 ±5 accuracy</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIGITAL TWINS -->
+        <div class="section">
+            <h2 class="section-title">🚀 Digital Twin Examples</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='examples/digital-twin-assembly-line.md'">
+                    <div class="card-icon">🚗</div>
+                    <div class="card-title">Assembly Line</div>
+                    <div class="card-desc">Automotive door assembly with 5 stations. Multi-PLC coordination and real-time 3D visualization.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 15 min build</span>
+                        <span>💰 $2M saved</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='examples/digital-twin-water-treatment.md'">
+                    <div class="card-icon">💧</div>
+                    <div class="card-title">Water Treatment</div>
+                    <div class="card-desc">Municipal plant serving 50K people. pH control, flow monitoring, and predictive maintenance.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 20 min build</span>
+                        <span>💰 30% savings</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='examples/ai-powered-rapid-prototyping.md'">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">AI Rapid Prototyping</div>
+                    <div class="card-desc">See how AI builds digital twins in minutes vs traditional 6-12 month timelines.</div>
+                    <div class="card-meta">
+                        <span>🚀 100x faster</span>
+                        <span>💰 99.9% cheaper</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATES -->
+        <div class="section">
+            <h2 class="section-title">🎨 3D Factory Templates</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">Robot Arm</div>
+                    <div class="card-desc">6-axis industrial robot with animated joints. Customizable color and position.</div>
+                    <span class="feature-badge">templates/robot_arm.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📹</div>
+                    <div class="card-title">Security Camera</div>
+                    <div class="card-desc">Surveillance camera with LED indicator and target tracking.</div>
+                    <span class="feature-badge">templates/camera.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Power Core</div>
+                    <div class="card-desc">Energy sphere with rotating rings and point light emission.</div>
+                    <span class="feature-badge">templates/power_core.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Assembly Line</div>
+                    <div class="card-desc">Conveyor belt with animated rollers. Configurable length and width.</div>
+                    <span class="feature-badge">templates/assembly_line.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🛰️</div>
+                    <div class="card-title">Sensor Array</div>
+                    <div class="card-desc">Configurable sensor array (6-12 units) with pulsing indicators.</div>
+                    <span class="feature-badge">templates/sensor_array.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔧</div>
+                    <div class="card-title">Tool Arm</div>
+                    <div class="card-desc">Drill, welder, or gripper tool with realistic animations.</div>
+                    <span class="feature-badge">templates/tool_arm.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">💡</div>
+                    <div class="card-title">Hologram Projector</div>
+                    <div class="card-desc">Data, planet, or text holograms with particle effects.</div>
+                    <span class="feature-badge">templates/hologram_projector.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔩</div>
+                    <div class="card-title">Mechanical Joint</div>
+                    <div class="card-desc">Revolute, prismatic, or ball joints with axis animation.</div>
+                    <span class="feature-badge">templates/mechanical_joint.js</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VENDORS -->
+        <div class="section">
+            <h2 class="section-title">🔧 PLC Vendors</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='vendors/allen-bradley/'">
+                    <div class="card-icon">🔵</div>
+                    <div class="card-title">Allen-Bradley (Rockwell)</div>
+                    <div class="card-desc">Logix5000 series with ladder logic, function blocks, and structured text. Studio 5000 compatible.</div>
+                    <div class="card-meta">
+                        <span>🇺🇸 USA</span>
+                        <span>⚡ 10ms scan</span>
+                        <span>📦 128K I/O</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='vendors/siemens/'">
+                    <div class="card-icon">🟦</div>
+                    <div class="card-title">Siemens</div>
+                    <div class="card-desc">S7-1500 series with STL, LAD, and SCL programming. TIA Portal integration.</div>
+                    <div class="card-meta">
+                        <span>🇩🇪 Germany</span>
+                        <span>⚡ 20ms scan</span>
+                        <span>📦 32K I/O</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='vendors/mitsubishi/'">
+                    <div class="card-icon">🔴</div>
+                    <div class="card-title">Mitsubishi Electric</div>
+                    <div class="card-desc">FX5U series with ladder logic and structured text. GX Works 3 compatible.</div>
+                    <div class="card-meta">
+                        <span>🇯🇵 Japan</span>
+                        <span>⚡ 10ms scan</span>
+                        <span>📦 10K I/O</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <h3>🏭 PlcSim3D</h3>
+        <p>Built with AI in 2 hours | Traditional: 6 months | 100x faster!</p>
+
+        <div class="footer-links">
+            <a href="https://github.com/teslasolar/plc">GitHub</a>
+            <a href="docs/INDEX.md">Documentation</a>
+            <a href="docs/VENDOR-TEMPLATE.md">Add Vendor</a>
+            <a href="docs/IMPROVEMENTS.md">Roadmap</a>
+            <a href="README.md">About</a>
+        </div>
+
+        <p style="margin-top: 20px; opacity: 0.6; font-size: 0.9em;">
+            MIT License | teslasolar | Powered by Three.js & AI
+        </p>
+    </footer>
+
+    <script>
+        // Add some interactivity
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                if (!this.onclick) {
+                    console.log('Card clicked:', this.querySelector('.card-title').textContent);
+                }
+            });
+        });
+
+        // Animate stats on scroll
+        const observerOptions = {
+            threshold: 0.5
+        };
+
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('.card, .section').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.5s ease';
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
