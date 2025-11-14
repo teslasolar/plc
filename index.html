@@ -3,661 +3,500 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PlcSim3D - Multi-Vendor PLC Simulator</title>
+    <title>🏭 PlcSim3D - Industrial Automation Playground</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            overflow: hidden;
-            font-family: 'Courier New', monospace;
-            background: #000;
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #001122 0%, #003366 100%);
+            color: #fff;
+            min-height: 100vh;
         }
-        #info {
-            position: fixed;
-            top: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ff00;
-            padding: 15px;
-            border: 2px solid #00ff00;
-            font-size: 11px;
-            z-index: 100;
-            min-width: 250px;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        }
-        #hmi {
-            position: fixed;
-            top: 10px;
-            right: 10px;
-            background: rgba(34, 34, 34, 0.95);
-            color: #00ff00;
-            padding: 15px;
-            border: 2px solid #00ff00;
-            font-size: 11px;
-            z-index: 100;
-            max-width: 400px;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        }
-        #controls {
-            position: fixed;
-            bottom: 10px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.8);
-            color: #00ff00;
-            padding: 15px;
-            border: 2px solid #00ff00;
-            font-size: 11px;
-            z-index: 100;
-            box-shadow: 0 0 20px rgba(0, 255, 0, 0.3);
-        }
-        button {
-            background: #003300;
-            color: #00ff00;
-            border: 1px solid #00ff00;
-            padding: 5px 10px;
-            margin: 2px;
-            cursor: pointer;
-            font-family: 'Courier New', monospace;
-            font-size: 10px;
-        }
-        button:hover {
-            background: #005500;
-        }
-        .plc-row {
-            margin: 5px 0;
-            padding: 5px;
-            border-left: 3px solid;
-        }
-        .vendor-AB { border-color: #0066cc; }
-        .vendor-Siemens { border-color: #009999; }
-        .vendor-Mitsu { border-color: #cc0000; }
-        .state-EXECUTE { color: #00ff00; }
-        .state-STOPPED { color: #ff0000; }
-        .state-IDLE { color: #ffff00; }
-        .io-grid {
-            display: grid;
-            grid-template-columns: repeat(8, 1fr);
-            gap: 2px;
-            margin: 3px 0;
-        }
-        .io-bit {
-            background: #111;
-            padding: 2px;
+
+        .hero {
             text-align: center;
-            border: 1px solid #333;
+            padding: 60px 20px;
+            background: linear-gradient(180deg, rgba(0,255,255,0.1) 0%, transparent 100%);
         }
-        .io-bit.on {
-            background: #00ff00;
-            color: #000;
+
+        h1 {
+            font-size: 3.5em;
+            margin-bottom: 20px;
+            text-shadow: 0 0 20px rgba(0,255,255,0.5);
+        }
+
+        .subtitle {
+            font-size: 1.3em;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            margin: 30px 0;
+            flex-wrap: wrap;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 15px 30px;
+            border-radius: 10px;
+            border: 1px solid rgba(0,255,255,0.3);
+        }
+
+        .stat-value {
+            font-size: 2em;
             font-weight: bold;
-        }
-        h3 {
             color: #00ffff;
-            margin: 10px 0 5px 0;
-            font-size: 12px;
         }
-        .protocol-badge {
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        .section {
+            margin: 60px 0;
+        }
+
+        .section-title {
+            font-size: 2em;
+            margin-bottom: 30px;
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+
+        .card {
+            background: rgba(255,255,255,0.05);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(0,255,255,0.2);
+            border-radius: 15px;
+            padding: 25px;
+            transition: all 0.3s;
+            cursor: pointer;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            border-color: #00ffff;
+            box-shadow: 0 10px 30px rgba(0,255,255,0.3);
+        }
+
+        .card-icon {
+            font-size: 3em;
+            margin-bottom: 15px;
+        }
+
+        .card-title {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: #00ffff;
+        }
+
+        .card-desc {
+            opacity: 0.8;
+            margin-bottom: 15px;
+            line-height: 1.6;
+        }
+
+        .card-meta {
+            display: flex;
+            gap: 15px;
+            font-size: 0.85em;
+            opacity: 0.6;
+        }
+
+        .btn {
             display: inline-block;
-            background: #003366;
-            color: #00ccff;
-            padding: 2px 6px;
-            margin: 2px;
-            border-radius: 3px;
-            font-size: 9px;
+            background: linear-gradient(45deg, #00ffff, #00aaff);
+            color: #000;
+            padding: 12px 30px;
+            border-radius: 25px;
+            text-decoration: none;
+            font-weight: bold;
+            transition: all 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+            box-shadow: 0 5px 20px rgba(0,255,255,0.5);
+        }
+
+        .btn-secondary {
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            border: 2px solid #00ffff;
+        }
+
+        .quick-links {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            flex-wrap: wrap;
+            margin: 30px 0;
+        }
+
+        .feature-badge {
+            display: inline-block;
+            background: rgba(0,255,0,0.2);
+            color: #00ff00;
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.75em;
+            margin: 5px 5px 0 0;
+        }
+
+        footer {
+            text-align: center;
+            padding: 40px 20px;
+            background: rgba(0,0,0,0.3);
+            margin-top: 80px;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin: 20px 0;
+            flex-wrap: wrap;
+        }
+
+        .footer-links a {
+            color: #00ffff;
+            text-decoration: none;
+            transition: opacity 0.3s;
+        }
+
+        .footer-links a:hover {
+            opacity: 0.7;
         }
     </style>
 </head>
 <body>
-    <div id="info">
+    <div class="hero">
+        <h1>🏭 PlcSim3D</h1>
+        <p class="subtitle">Browser-Based Industrial Automation Playground</p>
+        <p>Multi-Vendor PLC Simulator | 3D Visualization | Real-Time Control</p>
+
+        <div class="stats">
+            <div class="stat">
+                <div class="stat-value">3</div>
+                <div class="stat-label">PLC Vendors</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">8</div>
+                <div class="stat-label">3D Templates</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">60fps</div>
+                <div class="stat-label">Rendering</div>
+            </div>
+            <div class="stat">
+                <div class="stat-value">&lt;5MB</div>
+                <div class="stat-label">Total Size</div>
+            </div>
+        </div>
+
+        <div class="quick-links">
+            <a href="simulator.html" class="btn">🎮 Launch Full Simulator</a>
+            <a href="https://github.com/teslasolar/plc" class="btn btn-secondary">📦 GitHub</a>
+            <a href="docs/INDEX.md" class="btn btn-secondary">📚 Documentation</a>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- DEMOS -->
+        <div class="section">
+            <h2 class="section-title">🎯 Interactive Demos</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='simulator.html'">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Full 3D Simulator</div>
+                    <div class="card-desc">Complete PLC simulator with Allen-Bradley, Siemens, and Mitsubishi controllers in a live 3D factory environment.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 100ms scan</span>
+                        <span>📡 Modbus/EIP</span>
+                        <span>🎮 60fps</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='pages/vendor-ab-demo.html'">
+                    <div class="card-icon">🔵</div>
+                    <div class="card-title">Allen-Bradley Demo</div>
+                    <div class="card-desc">Interactive Logix5000 controller demo. Program ladder logic, toggle inputs, monitor outputs in real-time.</div>
+                    <div class="card-meta">
+                        <span>⚡ 10ms scan</span>
+                        <span>📝 Ladder logic</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Siemens S7-1500 demo')">
+                    <div class="card-icon">🟦</div>
+                    <div class="card-title">Siemens S7 Demo</div>
+                    <div class="card-desc">S7-1500 PLC with STL programming. Data blocks, memory areas, and TIA Portal compatibility.</div>
+                    <div class="card-meta">
+                        <span>⚡ 20ms scan</span>
+                        <span>📝 STL/LAD</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Mitsubishi FX5U demo')">
+                    <div class="card-icon">🔴</div>
+                    <div class="card-title">Mitsubishi FX5U Demo</div>
+                    <div class="card-desc">FX5U series PLC with GX Works programming. High-speed counters and positioning control.</div>
+                    <div class="card-meta">
+                        <span>⚡ 10ms scan</span>
+                        <span>📝 Ladder/ST</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- GAMES -->
+        <div class="section">
+            <h2 class="section-title">🎮 Learning Games</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='pages/conveyor-game.html'">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Conveyor Challenge</div>
+                    <div class="card-desc">Sort 100 products by weight in 60 seconds! Program the PLC to route items to correct bins.</div>
+                    <div class="card-meta">
+                        <span>⭐⭐☆☆☆ Easy</span>
+                        <span>⏱️ 60s limit</span>
+                        <span>🎯 100 products</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Traffic light game')">
+                    <div class="card-icon">🚦</div>
+                    <div class="card-title">Traffic Light Simulator</div>
+                    <div class="card-desc">Control a 4-way intersection without causing accidents. Master state machines and timers.</div>
+                    <div class="card-meta">
+                        <span>⭐⭐⭐☆☆ Medium</span>
+                        <span>🚗 Safety first!</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+
+                <div class="card" onclick="alert('Coming soon! Tank control game')">
+                    <div class="card-icon">🛢️</div>
+                    <div class="card-title">Tank Fill Control</div>
+                    <div class="card-desc">Fill tanks to exact setpoint using PID control. Precision matters!</div>
+                    <div class="card-meta">
+                        <span>⭐⭐⭐⭐☆ Hard</span>
+                        <span>🎯 ±5 accuracy</span>
+                    </div>
+                    <span class="feature-badge">COMING SOON</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- DIGITAL TWINS -->
+        <div class="section">
+            <h2 class="section-title">🚀 Digital Twin Examples</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='examples/digital-twin-assembly-line.md'">
+                    <div class="card-icon">🚗</div>
+                    <div class="card-title">Assembly Line</div>
+                    <div class="card-desc">Automotive door assembly with 5 stations. Multi-PLC coordination and real-time 3D visualization.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 15 min build</span>
+                        <span>💰 $2M saved</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='examples/digital-twin-water-treatment.md'">
+                    <div class="card-icon">💧</div>
+                    <div class="card-title">Water Treatment</div>
+                    <div class="card-desc">Municipal plant serving 50K people. pH control, flow monitoring, and predictive maintenance.</div>
+                    <div class="card-meta">
+                        <span>⏱️ 20 min build</span>
+                        <span>💰 30% savings</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='examples/ai-powered-rapid-prototyping.md'">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">AI Rapid Prototyping</div>
+                    <div class="card-desc">See how AI builds digital twins in minutes vs traditional 6-12 month timelines.</div>
+                    <div class="card-meta">
+                        <span>🚀 100x faster</span>
+                        <span>💰 99.9% cheaper</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- TEMPLATES -->
+        <div class="section">
+            <h2 class="section-title">🎨 3D Factory Templates</h2>
+            <div class="card-grid">
+                <div class="card">
+                    <div class="card-icon">🤖</div>
+                    <div class="card-title">Robot Arm</div>
+                    <div class="card-desc">6-axis industrial robot with animated joints. Customizable color and position.</div>
+                    <span class="feature-badge">templates/robot_arm.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">📹</div>
+                    <div class="card-title">Security Camera</div>
+                    <div class="card-desc">Surveillance camera with LED indicator and target tracking.</div>
+                    <span class="feature-badge">templates/camera.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">⚡</div>
+                    <div class="card-title">Power Core</div>
+                    <div class="card-desc">Energy sphere with rotating rings and point light emission.</div>
+                    <span class="feature-badge">templates/power_core.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🏭</div>
+                    <div class="card-title">Assembly Line</div>
+                    <div class="card-desc">Conveyor belt with animated rollers. Configurable length and width.</div>
+                    <span class="feature-badge">templates/assembly_line.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🛰️</div>
+                    <div class="card-title">Sensor Array</div>
+                    <div class="card-desc">Configurable sensor array (6-12 units) with pulsing indicators.</div>
+                    <span class="feature-badge">templates/sensor_array.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔧</div>
+                    <div class="card-title">Tool Arm</div>
+                    <div class="card-desc">Drill, welder, or gripper tool with realistic animations.</div>
+                    <span class="feature-badge">templates/tool_arm.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">💡</div>
+                    <div class="card-title">Hologram Projector</div>
+                    <div class="card-desc">Data, planet, or text holograms with particle effects.</div>
+                    <span class="feature-badge">templates/hologram_projector.js</span>
+                </div>
+
+                <div class="card">
+                    <div class="card-icon">🔩</div>
+                    <div class="card-title">Mechanical Joint</div>
+                    <div class="card-desc">Revolute, prismatic, or ball joints with axis animation.</div>
+                    <span class="feature-badge">templates/mechanical_joint.js</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- VENDORS -->
+        <div class="section">
+            <h2 class="section-title">🔧 PLC Vendors</h2>
+            <div class="card-grid">
+                <div class="card" onclick="window.location='vendors/allen-bradley/'">
+                    <div class="card-icon">🔵</div>
+                    <div class="card-title">Allen-Bradley (Rockwell)</div>
+                    <div class="card-desc">Logix5000 series with ladder logic, function blocks, and structured text. Studio 5000 compatible.</div>
+                    <div class="card-meta">
+                        <span>🇺🇸 USA</span>
+                        <span>⚡ 10ms scan</span>
+                        <span>📦 128K I/O</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='vendors/siemens/'">
+                    <div class="card-icon">🟦</div>
+                    <div class="card-title">Siemens</div>
+                    <div class="card-desc">S7-1500 series with STL, LAD, and SCL programming. TIA Portal integration.</div>
+                    <div class="card-meta">
+                        <span>🇩🇪 Germany</span>
+                        <span>⚡ 20ms scan</span>
+                        <span>📦 32K I/O</span>
+                    </div>
+                </div>
+
+                <div class="card" onclick="window.location='vendors/mitsubishi/'">
+                    <div class="card-icon">🔴</div>
+                    <div class="card-title">Mitsubishi Electric</div>
+                    <div class="card-desc">FX5U series with ladder logic and structured text. GX Works 3 compatible.</div>
+                    <div class="card-meta">
+                        <span>🇯🇵 Japan</span>
+                        <span>⚡ 10ms scan</span>
+                        <span>📦 10K I/O</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
         <h3>🏭 PlcSim3D</h3>
-        <div>ISA-95 Multi-Vendor Simulator</div>
-        <div>FPS: <span id="fps">60</span></div>
-        <div>Scan Rate: 100ms</div>
-        <div class="protocol-badge">MODBUS TCP</div>
-        <div class="protocol-badge">EtherNet/IP</div>
-    </div>
+        <p>Built with AI in 2 hours | Traditional: 6 months | 100x faster!</p>
 
-    <div id="hmi"></div>
+        <div class="footer-links">
+            <a href="https://github.com/teslasolar/plc">GitHub</a>
+            <a href="docs/INDEX.md">Documentation</a>
+            <a href="docs/VENDOR-TEMPLATE.md">Add Vendor</a>
+            <a href="docs/IMPROVEMENTS.md">Roadmap</a>
+            <a href="README.md">About</a>
+        </div>
 
-    <div id="controls">
-        <h3>⚡ PLC Controls</h3>
-        <div id="plc-controls"></div>
-    </div>
+        <p style="margin-top: 20px; opacity: 0.6; font-size: 0.9em;">
+            MIT License | teslasolar | Powered by Three.js & AI
+        </p>
+    </footer>
 
-    <script type="importmap">
-    {
-        "imports": {
-            "three": "https://cdn.jsdelivr.net/npm/three@0.158.0/build/three.module.js",
-            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.158.0/examples/jsm/"
-        }
-    }
-    </script>
+    <script>
+        // Add some interactivity
+        document.querySelectorAll('.card').forEach(card => {
+            card.addEventListener('click', function() {
+                if (!this.onclick) {
+                    console.log('Card clicked:', this.querySelector('.card-title').textContent);
+                }
+            });
+        });
 
-    <script type="module">
-        import * as THREE from 'three';
-        import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-
-        // ========================
-        // 🔧 VENDOR PROFILES
-        // ========================
-        const VENDORS = {
-            AB: {
-                name: 'Allen-Bradley',
-                fullName: 'Logix5000',
-                color: 0x0066cc,
-                syntax: 'ladder',
-                tags: ['Tag1', 'Tag2', 'ProductCount', 'ConveyorRun'],
-                scan: 10
-            },
-            Siemens: {
-                name: 'Siemens',
-                fullName: 'S7-1500',
-                color: 0x009999,
-                syntax: 'stl',
-                tags: ['DB1.DBX0.0', 'DB1.DBD4', 'M0.0', 'Q0.0'],
-                scan: 20
-            },
-            Mitsu: {
-                name: 'Mitsubishi',
-                fullName: 'FX5U',
-                color: 0xcc0000,
-                syntax: 'ladder',
-                tags: ['X0', 'Y0', 'M0', 'D0'],
-                scan: 10
-            }
+        // Animate stats on scroll
+        const observerOptions = {
+            threshold: 0.5
         };
 
-        // ========================
-        // ⚡ LADDER LOGIC PARSER
-        // ========================
-        class LadderParser {
-            parse(str, vendor) {
-                if (vendor === 'AB') return this.parseAB(str);
-                if (vendor === 'Siemens') return this.parseSTL(str);
-                return this.parseMitsu(str);
-            }
-
-            parseAB(str) {
-                // XIC = Examine If Closed, OTE = Output Energize
-                return str
-                    .replace(/XIC\((\w+)\)/g, 'this.tags["$1"]')
-                    .replace(/OTE\((\w+)\)/g, '() => this.tags["$1"] = true');
-            }
-
-            parseSTL(str) {
-                // STL: A = AND, = = Assignment
-                return str
-                    .replace(/A\s+(\w+)/g, 'this.tags["$1"]')
-                    .replace(/=\s+(\w+)/g, '() => this.tags["$1"] = true');
-            }
-
-            parseMitsu(str) {
-                // LD = Load, OUT = Output
-                return str
-                    .replace(/LD\s+(\w+)/g, 'this.tags["$1"]')
-                    .replace(/OUT\s+(\w+)/g, '() => this.tags["$1"] = true');
-            }
-        }
-
-        // ========================
-        // 🏭 PLC CORE [PackML + ISA-95]
-        // ========================
-        class PLC {
-            constructor(vendor, addr) {
-                this.vendor = vendor;
-                this.addr = addr;
-                this.state = 'STOPPED';
-                this.io = {
-                    DI: new Array(16).fill(false),
-                    DO: new Array(16).fill(false),
-                    AI: new Array(8).fill(0),
-                    AO: new Array(8).fill(0)
-                };
-                this.tags = {};
-                this.scan = VENDORS[vendor].scan;
-                this.program = [];
-                this.isa95 = {
-                    L0: 'Field Devices',
-                    L1: 'Control (PLC)',
-                    L2: 'Supervisory (SCADA)',
-                    L3: 'MES',
-                    L4: 'ERP'
-                };
-                this.scanCount = 0;
-                this.lastScan = Date.now();
-
-                // Initialize vendor-specific tags
-                VENDORS[vendor].tags.forEach(tag => {
-                    this.tags[tag] = false;
-                });
-            }
-
-            init() {
-                // Initialize IO
-                for (let i = 0; i < 16; i++) {
-                    this.io.DI[i] = false;
-                    this.io.DO[i] = false;
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = '1';
+                    entry.target.style.transform = 'translateY(0)';
                 }
-                for (let i = 0; i < 8; i++) {
-                    this.io.AI[i] = 0;
-                    this.io.AO[i] = 0;
-                }
-            }
-
-            setState(s) {
-                const valid = [
-                    'STOPPED', 'STARTING', 'IDLE', 'EXECUTE',
-                    'STOPPING', 'ABORTING', 'ABORTED', 'CLEARING', 'COMPLETE'
-                ];
-                if (valid.includes(s)) {
-                    this.state = s;
-                }
-            }
-
-            runRung(rung) {
-                try {
-                    return eval(rung);
-                } catch (e) {
-                    console.error(`Rung error in ${this.vendor}[${this.addr}]:`, e);
-                    return false;
-                }
-            }
-
-            scan() {
-                if (this.state !== 'EXECUTE') return;
-
-                this.scanCount++;
-                this.lastScan = Date.now();
-
-                // Execute ladder logic program
-                this.program.forEach((rung, i) => {
-                    try {
-                        if (this.runRung.call(this, rung.logic)) {
-                            rung.output.call(this);
-                        }
-                    } catch (e) {
-                        console.error(`Program error in rung ${i}:`, e);
-                    }
-                });
-
-                // Simulate some IO activity
-                if (this.scanCount % 50 === 0) {
-                    const randomDI = Math.floor(Math.random() * 8);
-                    this.io.DI[randomDI] = !this.io.DI[randomDI];
-                }
-
-                // Simple logic: DI[0] -> DO[0]
-                this.io.DO[0] = this.io.DI[0];
-                this.io.DO[1] = this.io.DI[1];
-            }
-
-            addRung(logic, output) {
-                this.program.push({ logic, output });
-            }
-
-            toggleInput(index) {
-                this.io.DI[index] = !this.io.DI[index];
-            }
-        }
-
-        // ========================
-        // 📡 COMMUNICATIONS [Modbus/EIP]
-        // ========================
-        class Comms {
-            constructor(proto) {
-                this.proto = proto; // 'modbus' or 'ethernetip'
-                this.nodes = new Map();
-                this.traffic = 0;
-                this.latency = 0;
-            }
-
-            register(plc) {
-                this.nodes.set(plc.addr, plc);
-            }
-
-            read(addr, reg) {
-                this.traffic++;
-                this.latency = Math.random() * 40 + 10; // 10-50ms
-
-                const plc = this.nodes.get(addr);
-                if (!plc) return null;
-
-                if (this.proto === 'modbus') {
-                    // Modbus register mapping
-                    return plc.tags[reg] || plc.io.DI[reg];
-                } else {
-                    // EtherNet/IP CIP
-                    return plc.tags[reg];
-                }
-            }
-
-            write(addr, reg, val) {
-                this.traffic++;
-                this.latency = Math.random() * 40 + 10;
-
-                const plc = this.nodes.get(addr);
-                if (!plc) return false;
-
-                if (this.proto === 'modbus') {
-                    plc.io.DO[reg] = val;
-                } else {
-                    plc.tags[reg] = val;
-                }
-                return true;
-            }
-        }
-
-        // ========================
-        // 📊 HMI [ISA-95 L2 SCADA]
-        // ========================
-        class HMI {
-            constructor(elementId) {
-                this.el = document.getElementById(elementId);
-            }
-
-            update(plcs, comms) {
-                let html = '<h3>📊 ISA-95 L2 SCADA</h3>';
-                html += `<div style="font-size:9px; color:#666;">Protocol: ${comms.proto.toUpperCase()} | Traffic: ${comms.traffic} | Latency: ${comms.latency.toFixed(1)}ms</div>`;
-
-                plcs.forEach(p => {
-                    const vendor = VENDORS[p.vendor];
-                    html += `
-                        <div class="plc-row vendor-${p.vendor}">
-                            <div style="font-weight:bold; color:#00ffff;">
-                                ${vendor.fullName} [${p.addr}]
-                            </div>
-                            <div>State: <span class="state-${p.state}">${p.state}</span></div>
-                            <div>Scan: ${p.scanCount} (${p.scan}ms)</div>
-
-                            <div style="margin-top:5px; font-size:10px;">
-                                <strong>Digital Inputs:</strong>
-                                <div class="io-grid">
-                                    ${p.io.DI.slice(0, 8).map((v, i) =>
-                                        `<div class="io-bit ${v ? 'on' : ''}">${i}:${v ? '1' : '0'}</div>`
-                                    ).join('')}
-                                </div>
-                            </div>
-
-                            <div style="margin-top:5px; font-size:10px;">
-                                <strong>Digital Outputs:</strong>
-                                <div class="io-grid">
-                                    ${p.io.DO.slice(0, 8).map((v, i) =>
-                                        `<div class="io-bit ${v ? 'on' : ''}">${i}:${v ? '1' : '0'}</div>`
-                                    ).join('')}
-                                </div>
-                            </div>
-
-                            <div style="margin-top:5px; font-size:9px; color:#888;">
-                                ISA-95: ${p.isa95.L1}
-                            </div>
-                        </div>
-                    `;
-                });
-
-                this.el.innerHTML = html;
-            }
-        }
-
-        // ========================
-        // 🎮 3D RENDERER [Three.js]
-        // ========================
-        class Render3D {
-            constructor() {
-                this.scene = new THREE.Scene();
-                this.scene.background = new THREE.Color(0x0a0a0a);
-                this.scene.fog = new THREE.Fog(0x0a0a0a, 10, 50);
-
-                this.camera = new THREE.PerspectiveCamera(
-                    75,
-                    window.innerWidth / window.innerHeight,
-                    0.1,
-                    1000
-                );
-
-                this.renderer = new THREE.WebGLRenderer({ antialias: true });
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-                this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-                document.body.appendChild(this.renderer.domElement);
-
-                this.controls = new OrbitControls(this.camera, this.renderer.domElement);
-                this.controls.enableDamping = true;
-                this.controls.dampingFactor = 0.05;
-
-                this.camera.position.set(8, 6, 8);
-                this.controls.target.set(0, 0, 0);
-
-                this.addLights();
-                this.addGrid();
-                this.addEnvironment();
-
-                this.plcMeshes = [];
-                this.clock = new THREE.Clock();
-                this.fps = 60;
-                this.fpsTime = 0;
-                this.frames = 0;
-
-                // Handle window resize
-                window.addEventListener('resize', () => this.onWindowResize());
-            }
-
-            addLights() {
-                const ambient = new THREE.AmbientLight(0x404040, 0.5);
-                this.scene.add(ambient);
-
-                const directional = new THREE.DirectionalLight(0xffffff, 0.8);
-                directional.position.set(5, 10, 5);
-                directional.castShadow = true;
-                this.scene.add(directional);
-
-                const point = new THREE.PointLight(0x00ff00, 0.3, 20);
-                point.position.set(0, 3, 0);
-                this.scene.add(point);
-            }
-
-            addGrid() {
-                const gridHelper = new THREE.GridHelper(20, 20, 0x00ff00, 0x003300);
-                this.scene.add(gridHelper);
-
-                const axesHelper = new THREE.AxesHelper(5);
-                this.scene.add(axesHelper);
-            }
-
-            addEnvironment() {
-                // Add floor
-                const floorGeo = new THREE.PlaneGeometry(20, 20);
-                const floorMat = new THREE.MeshStandardMaterial({
-                    color: 0x111111,
-                    roughness: 0.8,
-                    metalness: 0.2
-                });
-                const floor = new THREE.Mesh(floorGeo, floorMat);
-                floor.rotation.x = -Math.PI / 2;
-                floor.position.y = -0.01;
-                this.scene.add(floor);
-            }
-
-            addPLC(plc, pos) {
-                const vendor = VENDORS[plc.vendor];
-
-                // Create PLC housing
-                const housingGeo = new THREE.BoxGeometry(1.2, 0.6, 0.4);
-                const housingMat = new THREE.MeshPhongMaterial({
-                    color: vendor.color,
-                    shininess: 30,
-                    specular: 0x222222
-                });
-                const housing = new THREE.Mesh(housingGeo, housingMat);
-
-                // Add label
-                const canvas = document.createElement('canvas');
-                canvas.width = 256;
-                canvas.height = 128;
-                const ctx = canvas.getContext('2d');
-                ctx.fillStyle = '#000';
-                ctx.fillRect(0, 0, 256, 128);
-                ctx.fillStyle = '#0f0';
-                ctx.font = 'bold 24px monospace';
-                ctx.textAlign = 'center';
-                ctx.fillText(vendor.name, 128, 50);
-                ctx.font = '18px monospace';
-                ctx.fillText(`[${plc.addr}]`, 128, 80);
-
-                const labelTexture = new THREE.CanvasTexture(canvas);
-                const labelMat = new THREE.MeshBasicMaterial({ map: labelTexture });
-                const labelGeo = new THREE.PlaneGeometry(1, 0.5);
-                const label = new THREE.Mesh(labelGeo, labelMat);
-                label.position.z = 0.21;
-                housing.add(label);
-
-                // Add status LED
-                const ledGeo = new THREE.SphereGeometry(0.05, 16, 16);
-                const ledMat = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                const led = new THREE.Mesh(ledGeo, ledMat);
-                led.position.set(0.5, 0.2, 0.21);
-                housing.add(led);
-
-                // Position the PLC
-                housing.position.set(...pos);
-                housing.userData = { plc, led };
-
-                this.scene.add(housing);
-                this.plcMeshes.push(housing);
-
-                return housing;
-            }
-
-            updatePLCs() {
-                this.plcMeshes.forEach(mesh => {
-                    const plc = mesh.userData.plc;
-                    const led = mesh.userData.led;
-
-                    // Update LED based on state
-                    if (plc.state === 'EXECUTE') {
-                        led.material.color.setHex(0x00ff00);
-                        led.material.emissive = new THREE.Color(0x00ff00);
-                    } else if (plc.state === 'STOPPED') {
-                        led.material.color.setHex(0xff0000);
-                        led.material.emissive = new THREE.Color(0xff0000);
-                    } else {
-                        led.material.color.setHex(0xffff00);
-                        led.material.emissive = new THREE.Color(0xffff00);
-                    }
-
-                    // Gentle breathing animation
-                    const time = Date.now() * 0.001;
-                    mesh.position.y = Math.sin(time + mesh.position.x) * 0.05;
-                });
-            }
-
-            onWindowResize() {
-                this.camera.aspect = window.innerWidth / window.innerHeight;
-                this.camera.updateProjectionMatrix();
-                this.renderer.setSize(window.innerWidth, window.innerHeight);
-            }
-
-            animate() {
-                requestAnimationFrame(() => this.animate());
-
-                // Calculate FPS
-                this.frames++;
-                const delta = this.clock.getDelta();
-                this.fpsTime += delta;
-
-                if (this.fpsTime >= 1.0) {
-                    this.fps = this.frames;
-                    this.frames = 0;
-                    this.fpsTime = 0;
-                    document.getElementById('fps').textContent = this.fps;
-                }
-
-                this.updatePLCs();
-                this.controls.update();
-                this.renderer.render(this.scene, this.camera);
-            }
-        }
-
-        // ========================
-        // 🚀 MAIN APPLICATION
-        // ========================
-        console.log('🏭 PlcSim3D Initializing...');
-
-        const renderer = new Render3D();
-        const hmi = new HMI('hmi');
-        const comms = new Comms('modbus');
-        const plcs = [];
-        const parser = new LadderParser();
-
-        // Create PLCs for each vendor
-        const vendorKeys = ['AB', 'Siemens', 'Mitsu'];
-        vendorKeys.forEach((vendorKey, i) => {
-            const plc = new PLC(vendorKey, i + 1);
-            plc.init();
-            comms.register(plc);
-
-            // Position PLCs in a row
-            renderer.addPLC(plc, [i * 2.5 - 2.5, 0, 0]);
-            plcs.push(plc);
-
-            // Add sample ladder logic
-            plc.addRung(
-                'this.io.DI[0]',
-                function() { this.io.DO[0] = true; }
-            );
-            plc.addRung(
-                'this.io.DI[1]',
-                function() { this.io.DO[1] = true; }
-            );
-
-            // Start in EXECUTE state
-            plc.setState('EXECUTE');
-        });
-
-        // Create control panel
-        const controlsDiv = document.getElementById('plc-controls');
-        plcs.forEach((plc, idx) => {
-            const div = document.createElement('div');
-            div.style.marginBottom = '10px';
-            div.innerHTML = `<strong>${VENDORS[plc.vendor].name}:</strong><br>`;
-
-            // State control buttons
-            ['STOPPED', 'IDLE', 'EXECUTE'].forEach(state => {
-                const btn = document.createElement('button');
-                btn.textContent = state;
-                btn.onclick = () => plc.setState(state);
-                div.appendChild(btn);
             });
+        }, observerOptions);
 
-            div.innerHTML += '<br>';
-
-            // Input toggle buttons
-            for (let i = 0; i < 4; i++) {
-                const btn = document.createElement('button');
-                btn.textContent = `DI${i}`;
-                btn.onclick = () => plc.toggleInput(i);
-                div.appendChild(btn);
-            }
-
-            controlsDiv.appendChild(div);
+        document.querySelectorAll('.card, .section').forEach(el => {
+            el.style.opacity = '0';
+            el.style.transform = 'translateY(20px)';
+            el.style.transition = 'all 0.5s ease';
+            observer.observe(el);
         });
-
-        // Main scan loop (100ms)
-        setInterval(() => {
-            plcs.forEach(plc => plc.scan());
-            hmi.update(plcs, comms);
-        }, 100);
-
-        // Start rendering
-        renderer.animate();
-
-        console.log('✅ PlcSim3D Ready!');
-        console.log(`📊 ${plcs.length} PLCs initialized`);
-        console.log(`📡 Protocol: ${comms.proto.toUpperCase()}`);
-        console.log('🎮 3D Scene active');
     </script>
 </body>
 </html>
