@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{GAME_NAME}} | PlcSim3D</title>
+    <link rel="stylesheet" href="../styles/common.css">
+    <link rel="stylesheet" href="../styles/game.css">
+</head>
+<body>
+    <div class="game-container">
+        <header class="game-header">
+            <h1>{{GAME_ICON}} {{GAME_NAME}}</h1>
+            <div class="game-stats">
+                <span>⏱️ Time: <span id="timer">{{TIME_LIMIT}}</span>s</span>
+                <span>🎯 Score: <span id="score">0</span></span>
+                <span>📊 Target: {{TARGET}}</span>
+            </div>
+        </header>
+
+        <div class="game-content">
+            <div class="game-viewport" id="viewport"></div>
+
+            <div class="game-controls">
+                <h3>🎮 Controls</h3>
+                <div id="game-controls">{{CONTROLS}}</div>
+            </div>
+
+            <div class="game-info">
+                <h3>ℹ️ Objective</h3>
+                <p>{{OBJECTIVE}}</p>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+        import { Comms } from '../components/comms.js';
+        {{GAME_SCRIPT}}
+    </script>
+</body>
+</html>

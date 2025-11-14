@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🏭 Conveyor Challenge | PlcSim3D</title>
+    <style>
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: monospace; background:#000; color:#0f0; overflow:hidden; }
+        .game { display:flex; flex-direction:column; height:100vh; padding:10px; }
+        .header { background:#111; border:2px solid #0f0; padding:15px; margin-bottom:10px; }
+        .stats { display:flex; gap:20px; margin-top:10px; font-size:18px; }
+        .content { display:flex; gap:10px; flex:1; }
+        .viewport { flex:1; background:#050505; border:2px solid #0f0; position:relative; }
+        .panel { width:300px; background:#111; border:2px solid #0f0; padding:10px; }
+        .conveyor { position:absolute; bottom:20%; left:10%; width:80%; height:60px; background:#333; }
+        .product { position:absolute; width:40px; height:40px; background:#ff6600; border-radius:5px; transition:left 0.5s; }
+        .bin { position:absolute; bottom:0; width:25%; height:15%; border:3px solid; }
+        .bin.light { left:5%; border-color:#0f0; }
+        .bin.medium { left:37.5%; border-color:#ff0; }
+        .bin.heavy { left:70%; border-color:#f00; }
+        button { background:#003300; color:#0f0; border:1px solid #0f0; padding:8px; margin:3px; cursor:pointer; font-family:monospace; }
+        button:hover { background:#005500; }
+        .score { font-size:24px; font-weight:bold; }
+    </style>
+</head>
+<body>
+    <div class="game">
+        <div class="header">
+            <h1>🏭 CONVEYOR SORTING CHALLENGE</h1>
+            <div class="stats">
+                <span>⏱️ <span id="timer">60</span>s</span>
+                <span>🎯 <span id="score" class="score">0</span>/100</span>
+                <span>📦 Weight: <span id="weight">0</span>g</span>
+            </div>
+        </div>
+        <div class="content">
+            <div class="viewport" id="viewport">
+                <div class="conveyor"></div>
+                <div class="bin light"><div style="text-align:center;padding:5px;">LIGHT<br>&lt;300g</div></div>
+                <div class="bin medium"><div style="text-align:center;padding:5px;">MEDIUM<br>300-700g</div></div>
+                <div class="bin heavy"><div style="text-align:center;padding:5px;">HEAVY<br>&gt;700g</div></div>
+            </div>
+            <div class="panel">
+                <h3>⚡ PLC Program</h3>
+                <pre style="font-size:10px; background:#000; padding:5px;">
+if (weight &lt; 300)
+  DO[0] = 1; // Light bin
+else if (weight &lt; 700)
+  DO[1] = 1; // Medium bin
+else
+  DO[2] = 1; // Heavy bin
+                </pre>
+                <h3>🎮 Manual Override</h3>
+                <button onclick="game.sortLight()">Light Bin</button>
+                <button onclick="game.sortMedium()">Medium Bin</button>
+                <button onclick="game.sortHeavy()">Heavy Bin</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { PLC } from '../components/plc.js';
+
+        class ConveyorGame {
+            constructor() {
+                this.plc = new PLC('AB', 1);
+                this.plc.init();
+                this.score = 0;
+                this.time = 60;
+                this.currentProduct = null;
+                this.setupPLC();
+                this.start();
+            }
+
+            setupPLC() {
+                this.plc.addRung('this.io.AI[0] < 300', function() { this.io.DO[0] = true; });
+                this.plc.addRung('this.io.AI[0] >= 300 && this.io.AI[0] < 700', function() { this.io.DO[1] = true; });
+                this.plc.addRung('this.io.AI[0] >= 700', function() { this.io.DO[2] = true; });
+                this.plc.setState('EXECUTE');
+            }
+
+            spawnProduct() {
+                const weight = Math.random() * 1000;
+                this.currentProduct = { weight, element: null };
+                this.plc.io.AI[0] = weight;
+                document.getElementById('weight').textContent = weight.toFixed(0);
+
+                const el = document.createElement('div');
+                el.className = 'product';
+                el.style.left = '10%';
+                el.style.bottom = '25%';
+                document.getElementById('viewport').appendChild(el);
+                this.currentProduct.element = el;
+
+                setTimeout(() => { el.style.left = '80%'; }, 100);
+                setTimeout(() => this.checkSort(), 600);
+            }
+
+            checkSort() {
+                const w = this.currentProduct.weight;
+                const correct = (w < 300 && this.plc.io.DO[0]) ||
+                                (w >= 300 && w < 700 && this.plc.io.DO[1]) ||
+                                (w >= 700 && this.plc.io.DO[2]);
+                if (correct) this.score++;
+                document.getElementById('score').textContent = this.score;
+                this.currentProduct.element.remove();
+                this.plc.io.DO = [false, false, false];
+                if (this.time > 0 && this.score < 100) setTimeout(() => this.spawnProduct(), 600);
+            }
+
+            sortLight() { this.plc.io.DO = [true, false, false]; }
+            sortMedium() { this.plc.io.DO = [false, true, false]; }
+            sortHeavy() { this.plc.io.DO = [false, false, true]; }
+
+            start() {
+                setInterval(() => {
+                    this.plc.scan();
+                    if (--this.time >= 0) document.getElementById('timer').textContent = this.time;
+                }, 1000);
+                this.spawnProduct();
+            }
+        }
+
+        window.game = new ConveyorGame();
+    </script>
+</body>
+</html>

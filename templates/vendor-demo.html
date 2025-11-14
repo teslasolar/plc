@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{VENDOR_NAME}} Demo | PlcSim3D</title>
+    <link rel="stylesheet" href="../styles/common.css">
+    <link rel="stylesheet" href="../styles/vendor.css">
+</head>
+<body style="background: linear-gradient(135deg, {{VENDOR_COLOR}}22, #000);">
+    <div class="vendor-demo">
+        <header class="vendor-header" style="border-color: {{VENDOR_COLOR}};">
+            <h1>{{VENDOR_NAME}} {{VENDOR_MODEL}}</h1>
+            <p>{{VENDOR_DESC}}</p>
+        </header>
+
+        <div class="demo-content">
+            <div class="plc-viewport" id="viewport"></div>
+
+            <div class="plc-panel">
+                <h3>📊 PLC Status</h3>
+                <div id="status"></div>
+
+                <h3>⚡ Ladder Logic</h3>
+                <pre id="ladder-code">{{LADDER_EXAMPLE}}</pre>
+
+                <h3>🎮 Test Controls</h3>
+                <div id="controls"></div>
+            </div>
+
+            <div class="plc-specs">
+                <h3>🔧 Specifications</h3>
+                <div id="specs">{{SPECS}}</div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../pages/vendor-demo-{{VENDOR_CODE}}.js"></script>
+</body>
+</html>
